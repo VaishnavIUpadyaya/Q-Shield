@@ -1,17 +1,15 @@
 from dataclasses import dataclass
 from typing import Optional
 
-
 VALID_ATTACK_TYPES = {
     "none",
+    "flip",
     "forgery",
     "replay",
     "impersonation",
     "unauthorized_verification",
     "channel_manipulation",
 }
-
-
 @dataclass
 class ExperimentConfig:
     attack_type: str

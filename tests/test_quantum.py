@@ -4,6 +4,8 @@ from quantum.bell_states import create_bell_pair
 from quantum.teleportation import create_teleportation_circuit
 from quantum.teleportation import run_teleportation
 from quantum.measurements import apply_projective_measurement
+from quantum.teleportation import run_teleportation_with_measurement
+from quantum.measurements import extract_bob_measurement_counts
 from quantum.states import (
     prepare_zero_state,
     prepare_one_state,
@@ -85,3 +87,55 @@ def test_projective_measurement_bases():
 
         assert circuit.num_qubits == 1
         assert circuit.num_clbits == 1
+
+def test_teleportation_zero_in_z_basis():
+    counts = run_teleportation_with_measurement(
+        input_state="zero",
+        measurement_basis="Z",
+        shots=1000,
+    )
+
+    assert sum(counts.values()) == 1000
+
+
+def test_teleportation_one_in_z_basis():
+    counts = run_teleportation_with_measurement(
+        input_state="one",
+        measurement_basis="Z",
+        shots=1000,
+    )
+
+    assert sum(counts.values()) == 1000
+
+
+def test_teleportation_plus_in_x_basis():
+    counts = run_teleportation_with_measurement(
+        input_state="plus",
+        measurement_basis="X",
+        shots=1000,
+    )
+
+    assert sum(counts.values()) == 1000
+
+
+def test_teleportation_minus_in_x_basis():
+    counts = run_teleportation_with_measurement(
+        input_state="minus",
+        measurement_basis="X",
+        shots=1000,
+    )
+
+    assert sum(counts.values()) == 1000
+
+def test_extract_bob_measurement_counts():
+    counts = {
+        "000": 250,
+        "001": 250,
+        "010": 250,
+        "011": 250,
+    }
+
+    bob_counts = extract_bob_measurement_counts(counts)
+
+    assert bob_counts["0"] == 1000
+    assert bob_counts["1"] == 0

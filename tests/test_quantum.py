@@ -2,6 +2,8 @@ from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from quantum.bell_states import create_bell_pair
 from quantum.teleportation import create_teleportation_circuit
+from quantum.teleportation import run_teleportation
+from quantum.measurements import apply_projective_measurement
 from quantum.states import (
     prepare_zero_state,
     prepare_one_state,
@@ -60,3 +62,26 @@ def test_teleportation_circuit():
 
     assert circuit.num_qubits == 3
     assert circuit.num_clbits == 2
+
+def test_teleportation_execution():
+    counts = run_teleportation(
+        input_state="plus",
+        shots=1000,
+    )
+
+    assert sum(counts.values()) == 1000
+
+def test_projective_measurement_bases():
+    for basis in ("X", "Y", "Z"):
+        circuit = QuantumCircuit(1, 1)
+
+        apply_projective_measurement(
+            circuit,
+            qubit=0,
+            basis=basis,
+        )
+
+        circuit.measure(0, 0)
+
+        assert circuit.num_qubits == 1
+        assert circuit.num_clbits == 1

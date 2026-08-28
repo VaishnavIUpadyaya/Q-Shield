@@ -10,19 +10,27 @@ def run_p2_detector(
     """
     P4 adapter for P2's statistical detector.
 
-    Converts P1's raw Qiskit counts into Bob's binary
-    measurement counts, obtains the ideal expected
-    probability, and calls P2.
-    """
+    Accepts either:
 
-    raw_counts = protocol_result["counts"]
+    1. A normal P1 protocol result containing raw Qiskit counts.
+    2. A P3 attacked result containing Bob's binary counts.
+    """
 
     state = protocol_result["input_state"]
     basis = protocol_result["measurement_basis"]
 
-    bob_counts = extract_bob_measurement_counts(
-        raw_counts
-    )
+    # If P3 has already produced attacked Bob counts,
+    # use them directly.
+    if "bob_counts" in protocol_result:
+        bob_counts = protocol_result["bob_counts"]
+
+    # Otherwise extract Bob's counts from the raw P1 result.
+    else:
+        raw_counts = protocol_result["counts"]
+
+        bob_counts = extract_bob_measurement_counts(
+            raw_counts
+        )
 
     expected = expected_distribution(
         state,
@@ -41,5 +49,5 @@ def run_p2_detector(
         "expected_probability": detection.expected_probability,
         "confidence": detection.confidence,
         "interval": list(detection.interval),
-        "bob_counts": bob_counts,
+        "bob_counts": dict(bob_counts),
     }

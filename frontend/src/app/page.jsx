@@ -113,7 +113,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#05070f] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen flex flex-col quantum-mesh-bg text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
       {/* Top Navbar */}
       <Navbar
         activeTab={activeTab}
@@ -122,8 +122,8 @@ export default function Home() {
         onQuickRun={handleQuickDemo}
       />
 
-      {/* Main Content View */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Main Content View with Spacious Layout */}
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 lg:px-10 py-10">
         {activeTab === "overview" && (
           <DashboardOverview
             metrics={metrics}
@@ -162,16 +162,16 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="glass-panel border-t border-slate-900 mt-12 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-400">Q-SHIELD</span>
+      {/* High-End Footer */}
+      <footer className="glass-panel border-t border-white/[0.06] mt-16 py-8 text-sm text-slate-400">
+        <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-3 font-medium">
+            <span className="font-display font-extrabold text-white">Q-SHIELD</span>
             <span>·</span>
-            <span>SIH26141 Quantum-Inspired Cyber Threat Detection</span>
+            <span>SIH26141 Quantum-Inspired Cyber Threat Detection Framework</span>
           </div>
-          <div>
-            <span>Powered by Qiskit Aer · FastAPI · Next.js · Zero AI/ML</span>
+          <div className="text-xs font-mono text-slate-500">
+            Engineered with Qiskit Aer · FastAPI · Next.js · Zero AI/ML Mathematical Statistics
           </div>
         </div>
       </footer>

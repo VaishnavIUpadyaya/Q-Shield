@@ -48,61 +48,62 @@ export default function ThreatAnalytics() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="pb-2 border-b border-slate-800">
-        <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
-          <ShieldAlert className="w-6 h-6 text-cyan-400" />
-          <span>Quantum Threat Analytics & Security Theory</span>
+    <div className="space-y-10 pb-12">
+      {/* Top Header */}
+      <div className="pb-6 border-b border-white/[0.08]">
+        <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-white flex items-center space-x-3">
+          <ShieldAlert className="w-8 h-8 text-quantum-cyan" />
+          <span>Quantum Threat Analytics & Mathematical Theory</span>
         </h1>
-        <p className="text-xs text-slate-400">
+        <p className="text-base text-slate-300 mt-2 font-normal">
           Rigorous mathematical justification for Q-SHIELD detection mechanisms across all five threat vectors — without AI or Machine Learning.
         </p>
       </div>
 
       {/* Why No AI/ML Banner */}
-      <div className="rounded-xl glass-panel-glow p-5 border border-cyan-500/40 bg-gradient-to-r from-cyan-950/40 via-slate-900 to-indigo-950/40">
-        <div className="flex items-start space-x-3.5">
-          <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-300">
-            <Sparkles className="w-6 h-6" />
+      <div className="rounded-3xl glass-panel-glow-cyan p-8 border border-cyan-500/30 bg-gradient-to-r from-cyan-950/40 via-obsidian-900 to-indigo-950/40">
+        <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-5">
+          <div className="p-4 rounded-2xl bg-cyan-500/20 text-quantum-cyan shrink-0">
+            <Sparkles className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
               Why Zero AI / Machine Learning is Required
             </h2>
-            <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-              Machine Learning classifiers suffer from opaque decision boundaries, adversarial vulnerability, and data bias. In contrast, <strong>Q-SHIELD relies exclusively on quantum mechanics and statistical hypothesis testing</strong> (Total Variation Distance, Wilson Score Intervals, and Binomial Proportions). Every security decision is mathematically provable, deterministic, and explainable to compliance audits.
+            <p className="mt-2 text-base text-slate-300 leading-relaxed font-normal">
+              Machine Learning models suffer from opaque decision boundaries ("black boxes"), vulnerability to adversarial perturbations, and dataset hallucinations. In contrast, <strong className="text-white">Q-SHIELD relies exclusively on the physical laws of quantum mechanics and exact statistical hypothesis testing</strong> (Total Variation Distance, Wilson Score Intervals, and Binomial Proportions). Every security decision is mathematically provable, deterministic, and fully explainable for security audits.
             </p>
           </div>
         </div>
       </div>
 
       {/* Attack Matrix Table */}
-      <div className="rounded-xl glass-panel p-5 border border-slate-800 space-y-4">
-        <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-          <Binary className="w-4 h-4 text-cyan-400" />
+      <div className="rounded-3xl glass-panel p-8 border border-white/[0.1] space-y-6">
+        <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center space-x-3">
+          <Binary className="w-5 h-5 text-quantum-cyan" />
           <span>Formal Threat Vector & Detection Bound Matrix</span>
         </h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-mono">
+          <table className="w-full text-left text-sm border-collapse">
             <thead>
-              <tr className="border-b border-slate-800 text-slate-400 bg-slate-950/60">
-                <th className="p-3">Threat Vector</th>
-                <th className="p-3">Quantum Physical Mechanism</th>
-                <th className="p-3">Statistical Detection Strategy</th>
-                <th className="p-3">Decision Bound Formula</th>
-                <th className="p-3 text-right">Empirical Status</th>
+              <tr className="border-b border-white/[0.08] text-xs font-bold uppercase text-slate-400 bg-obsidian-950/80">
+                <th className="p-4">Threat Vector</th>
+                <th className="p-4">Quantum Physical Mechanism</th>
+                <th className="p-4">Statistical Detection Strategy</th>
+                <th className="p-4">Decision Bound Formula</th>
+                <th className="p-4 text-right">Empirical Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 text-slate-300">
+            <tbody className="divide-y divide-white/[0.04] text-slate-300">
               {attackComparisons.map((item, idx) => (
-                <tr key={idx} className="hover:bg-slate-900/60 transition-colors">
-                  <td className="p-3 font-bold text-cyan-300">{item.name}</td>
-                  <td className="p-3 text-slate-400 font-sans text-xs max-w-xs">{item.quantumMechanism}</td>
-                  <td className="p-3 text-slate-300 font-sans text-xs max-w-xs">{item.detectorStrategy}</td>
-                  <td className="p-3 font-mono text-[11px] text-purple-300 bg-slate-950/40">{item.thresholdFormula}</td>
-                  <td className="p-3 text-right">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="p-4 font-bold text-quantum-cyan text-base">{item.name}</td>
+                  <td className="p-4 text-slate-300 font-sans text-sm max-w-xs leading-relaxed">{item.quantumMechanism}</td>
+                  <td className="p-4 text-slate-200 font-sans text-sm max-w-xs leading-relaxed">{item.detectorStrategy}</td>
+                  <td className="p-4 font-mono text-xs text-purple-300 bg-obsidian-950/50 rounded-lg">{item.thresholdFormula}</td>
+                  <td className="p-4 text-right">
+                    <span className="px-3 py-1 rounded-xl text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
                       {item.status}
                     </span>
                   </td>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, RotateCcw, AlertTriangle, CheckCircle2, ShieldAlert, Cpu, Layers, BarChart2, Activity, HelpCircle, FileKey, Radio, RefreshCw, Lock, Sparkles, Sliders } from "lucide-react";
+import { Play, RotateCcw, AlertTriangle, CheckCircle2, ShieldAlert, Cpu, Layers, BarChart2, Activity, HelpCircle, FileKey, Radio, RefreshCw, Lock, Sparkles, Sliders, ArrowRight } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, Cell } from "recharts";
 
 export default function SimulationStudio({
@@ -43,26 +43,26 @@ export default function SimulationStudio({
   const chartData = [
     {
       state: "|00⟩",
-      Expected: ((lastResult?.measurements?.expected_distribution?.["00"] ?? (simConfig.message === "00" ? 1.0 : 0.0)) * 100).toFixed(1),
-      Observed: ((lastResult?.measurements?.probabilities?.["00"] ?? (simConfig.message === "00" ? 1.0 : 0.0)) * 100).toFixed(1),
+      Expected: Number(((lastResult?.measurements?.expected_distribution?.["00"] ?? (simConfig.message === "00" ? 1.0 : 0.0)) * 100).toFixed(1)),
+      Observed: Number(((lastResult?.measurements?.probabilities?.["00"] ?? (simConfig.message === "00" ? 1.0 : 0.0)) * 100).toFixed(1)),
       count: lastResult?.measurements?.counts?.["00"] ?? (simConfig.message === "00" ? simConfig.shots : 0),
     },
     {
       state: "|01⟩",
-      Expected: ((lastResult?.measurements?.expected_distribution?.["01"] ?? (simConfig.message === "01" ? 1.0 : 0.0)) * 100).toFixed(1),
-      Observed: ((lastResult?.measurements?.probabilities?.["01"] ?? (simConfig.message === "01" ? 1.0 : 0.0)) * 100).toFixed(1),
+      Expected: Number(((lastResult?.measurements?.expected_distribution?.["01"] ?? (simConfig.message === "01" ? 1.0 : 0.0)) * 100).toFixed(1)),
+      Observed: Number(((lastResult?.measurements?.probabilities?.["01"] ?? (simConfig.message === "01" ? 1.0 : 0.0)) * 100).toFixed(1)),
       count: lastResult?.measurements?.counts?.["01"] ?? (simConfig.message === "01" ? simConfig.shots : 0),
     },
     {
       state: "|10⟩",
-      Expected: ((lastResult?.measurements?.expected_distribution?.["10"] ?? (simConfig.message === "10" ? 1.0 : 0.0)) * 100).toFixed(1),
-      Observed: ((lastResult?.measurements?.probabilities?.["10"] ?? (simConfig.message === "10" ? 1.0 : 0.0)) * 100).toFixed(1),
+      Expected: Number(((lastResult?.measurements?.expected_distribution?.["10"] ?? (simConfig.message === "10" ? 1.0 : 0.0)) * 100).toFixed(1)),
+      Observed: Number(((lastResult?.measurements?.probabilities?.["10"] ?? (simConfig.message === "10" ? 1.0 : 0.0)) * 100).toFixed(1)),
       count: lastResult?.measurements?.counts?.["10"] ?? (simConfig.message === "10" ? simConfig.shots : 0),
     },
     {
       state: "|11⟩",
-      Expected: ((lastResult?.measurements?.expected_distribution?.["11"] ?? (simConfig.message === "11" ? 1.0 : 0.0)) * 100).toFixed(1),
-      Observed: ((lastResult?.measurements?.probabilities?.["11"] ?? (simConfig.message === "11" ? 1.0 : 0.0)) * 100).toFixed(1),
+      Expected: Number(((lastResult?.measurements?.expected_distribution?.["11"] ?? (simConfig.message === "11" ? 1.0 : 0.0)) * 100).toFixed(1)),
+      Observed: Number(((lastResult?.measurements?.probabilities?.["11"] ?? (simConfig.message === "11" ? 1.0 : 0.0)) * 100).toFixed(1)),
       count: lastResult?.measurements?.counts?.["11"] ?? (simConfig.message === "11" ? simConfig.shots : 0),
     },
   ];
@@ -74,19 +74,19 @@ export default function SimulationStudio({
   const pipelineStages = [
     {
       id: "state_prep",
-      title: "1. State Prep",
+      title: "1. State Preparation",
       math: "|ψ⟩_Alice",
       desc: `Alice encodes message '${simConfig.message}' into private Pauli eigenstate.`,
     },
     {
       id: "bell_entangle",
-      title: "2. Bell Pair",
+      title: "2. Bell Entanglement",
       math: "(|00⟩+|11⟩)/√2",
       desc: "Entangled GHZ/Bell channel established between Signer & Verifiers.",
     },
     {
       id: "teleportation",
-      title: "3. Teleportation",
+      title: "3. Quantum Teleportation",
       math: "Bell Measurement",
       desc: "Alice performs joint Bell measurement, collapsing qubits to 2 classical bits.",
     },
@@ -105,27 +105,27 @@ export default function SimulationStudio({
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-10 pb-12">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-800">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-white/[0.08]">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center space-x-2">
-            <Cpu className="w-6 h-6 text-cyan-400" />
+          <h1 className="text-3xl sm:text-4xl font-display font-extrabold text-white flex items-center space-x-3">
+            <Cpu className="w-8 h-8 text-quantum-cyan" />
             <span>Quantum Simulation Studio</span>
           </h1>
-          <p className="text-xs text-slate-400">
-            Configure quantum state parameters, inject attack vectors, and examine real-time projective measurement statistics.
+          <p className="text-base text-slate-300 mt-2 font-normal">
+            Configure quantum circuits, inject adversarial noise, and observe live projective measurement statistics.
           </p>
         </div>
 
-        {/* Quick Presets */}
-        <div className="flex items-center flex-wrap gap-2">
-          <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Presets:</span>
+        {/* Quick Presets with larger buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Presets:</span>
           {presets.map((p, idx) => (
             <button
               key={idx}
               onClick={() => applyPreset(p)}
-              className="px-2.5 py-1 rounded-md text-xs font-mono bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 transition-all hover:border-cyan-500/50"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-obsidian-900 hover:bg-obsidian-850 text-slate-300 hover:text-white border border-white/[0.1] hover:border-quantum-cyan/40 transition-all"
             >
               {p.label}
             </button>
@@ -133,39 +133,32 @@ export default function SimulationStudio({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Configuration Controls (5 cols) */}
-        <div className="lg:col-span-5 space-y-5">
-          <div className="rounded-xl glass-panel p-5 border border-slate-800 space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-              <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                <Sliders className="w-4 h-4 text-cyan-400" />
-                <span>Simulation Parameters</span>
-              </h2>
-              <button
-                onClick={() => applyPreset(presets[0])}
-                className="text-[11px] text-slate-400 hover:text-cyan-300 flex items-center space-x-1"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset</span>
-              </button>
+      {/* Main Grid: Left Controls (1/3) & Right Visualization (2/3) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left Column: Parameter Configuration */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="rounded-3xl glass-panel p-7 border border-white/[0.1] shadow-glass-card space-y-6">
+            <div className="flex items-center space-x-3 pb-4 border-b border-white/[0.06]">
+              <Sliders className="w-5 h-5 text-quantum-cyan" />
+              <h2 className="text-lg font-bold text-white">Quantum Parameters</h2>
             </div>
 
-            {/* 1. Message Selection */}
+            {/* Message Selection */}
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
-                <span>Quantum Message (Xu-Wang Encoding)</span>
-                <span className="font-mono text-cyan-400 text-[11px]">Selected: {simConfig.message}</span>
+              <label className="block text-sm font-bold text-slate-300 mb-2">
+                QDS Message to Sign:
               </label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2.5">
                 {["00", "01", "10", "11"].map((msg) => (
                   <button
                     key={msg}
-                    onClick={() => setSimConfig({ ...simConfig, message: msg })}
-                    className={`py-2 px-3 rounded-lg font-mono font-bold text-xs transition-all ${
+                    type="button"
+                    onClick={() => setSimConfig((prev) => ({ ...prev, message: msg }))}
+                    className={`py-3 rounded-xl font-mono text-sm font-bold transition-all ${
                       simConfig.message === msg
-                        ? "bg-cyan-500/20 text-cyan-300 border-2 border-cyan-400 shadow-sm shadow-cyan-500/20"
-                        : "bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-700/80"
+                        ? "bg-gradient-to-r from-cyan-500/30 to-purple-500/30 text-white border border-cyan-400 shadow-quantum-glow"
+                        : "bg-obsidian-950/80 text-slate-400 hover:text-slate-200 border border-white/[0.08]"
                     }`}
                   >
                     |{msg}⟩
@@ -174,49 +167,41 @@ export default function SimulationStudio({
               </div>
             </div>
 
-            {/* 2. Quantum State & Measurement Basis */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Quantum State
-                </label>
-                <select
-                  value={simConfig.signing_state || "default"}
-                  onChange={(e) => setSimConfig({ ...simConfig, signing_state: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400"
-                >
-                  <option value="default">Table 1 Eigenstate</option>
-                  <option value="zero">|0⟩ (Zero state)</option>
-                  <option value="one">|1⟩ (One state)</option>
-                  <option value="plus">|+⟩ (Superposition)</option>
-                  <option value="minus">|-⟩ (Phase minus)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Measurement Basis
-                </label>
-                <select
-                  value={simConfig.measurement_basis || "Z"}
-                  onChange={(e) => setSimConfig({ ...simConfig, measurement_basis: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400"
-                >
-                  <option value="Z">Z (Computational [|0⟩, |1⟩])</option>
-                  <option value="X">X (Hadamard [|+⟩, |−⟩])</option>
-                  <option value="Y">Y (Circular [|+i⟩, |−i⟩])</option>
-                </select>
+            {/* Measurement Basis */}
+            <div>
+              <label className="block text-sm font-bold text-slate-300 mb-2">
+                Bob's Measurement Basis:
+              </label>
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  { id: "Z", label: "Z (Computational)" },
+                  { id: "X", label: "X (Hadamard)" },
+                  { id: "Y", label: "Y (Circular)" },
+                ].map((basis) => (
+                  <button
+                    key={basis.id}
+                    type="button"
+                    onClick={() => setSimConfig((prev) => ({ ...prev, measurement_basis: basis.id }))}
+                    className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                      simConfig.measurement_basis === basis.id
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                        : "bg-obsidian-950/80 text-slate-400 border border-white/[0.08] hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    {basis.id} Basis
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* 3. Measurement Shots */}
+            {/* Shots Slider */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-300">
-                  Measurement Shots (Qiskit Aer)
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-bold text-slate-300">
+                  Quantum Shots (Aer):
                 </label>
-                <span className="font-mono text-xs font-bold text-cyan-400">
-                  {simConfig.shots.toLocaleString()} shots
+                <span className="text-sm font-mono font-bold text-quantum-cyan px-2.5 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+                  {simConfig.shots.toLocaleString()}
                 </span>
               </div>
               <input
@@ -225,65 +210,42 @@ export default function SimulationStudio({
                 max="5000"
                 step="100"
                 value={simConfig.shots}
-                onChange={(e) => setSimConfig({ ...simConfig, shots: Number(e.target.value) })}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                onChange={(e) => setSimConfig((prev) => ({ ...prev, shots: Number(e.target.value) }))}
+                className="w-full h-2 bg-obsidian-950 rounded-lg appearance-none cursor-pointer accent-cyan-400"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
+              <div className="flex justify-between text-xs text-slate-400 mt-1 font-mono">
                 <span>100</span>
-                <span>1,000</span>
                 <span>2,500</span>
                 <span>5,000</span>
               </div>
             </div>
 
-            {/* 4. Attack Vector Selection */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-2">
-                Attack Scenario (Injected Malice)
+            {/* Attack Scenario Selector */}
+            <div className="pt-2 border-t border-white/[0.06]">
+              <label className="block text-sm font-bold text-slate-300 mb-2">
+                Adversary Threat Vector:
               </label>
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {attackOptions.map((opt) => {
-                  const Icon = opt.icon;
-                  const isSelected = simConfig.attack_type === opt.id;
-                  return (
-                    <div
-                      key={opt.id}
-                      onClick={() => setSimConfig({ ...simConfig, attack_type: opt.id })}
-                      className={`p-2.5 rounded-lg border cursor-pointer transition-all flex items-start space-x-2.5 ${
-                        isSelected
-                          ? "bg-slate-800/90 border-cyan-400 ring-1 ring-cyan-400/30"
-                          : "bg-slate-900/60 hover:bg-slate-900 border-slate-800"
-                      }`}
-                    >
-                      <div className={`mt-0.5 p-1.5 rounded-md bg-slate-950 ${opt.color}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-200">{opt.name}</span>
-                          {opt.id === "none" && (
-                            <span className="text-[10px] font-mono text-emerald-400 px-1.5 py-0.2 rounded bg-emerald-950 border border-emerald-800">
-                              Baseline
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-400 line-clamp-1">{opt.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <select
+                value={simConfig.attack_type}
+                onChange={(e) => setSimConfig((prev) => ({ ...prev, attack_type: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl bg-obsidian-950 border border-white/[0.12] text-sm text-slate-200 font-semibold focus:outline-none focus:border-cyan-400"
+              >
+                {attackOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id} className="bg-obsidian-900 py-2">
+                    {opt.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* 5. Attack Fraction Slider (if statistical attack) */}
-            {["forgery", "channel_manipulation", "impersonation"].includes(simConfig.attack_type) && (
-              <div className="p-3 rounded-lg bg-rose-950/20 border border-rose-800/30 space-y-2">
+            {/* Attack Strength Slider (When Attack Selected) */}
+            {simConfig.attack_type !== "none" && (
+              <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-rose-300 flex items-center space-x-1">
-                    <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                    <span>Attack Strength / Noise Fraction</span>
-                  </span>
-                  <span className="font-mono text-xs font-bold text-rose-400">
+                  <label className="text-xs font-bold text-rose-300 uppercase tracking-wider">
+                    Attack Strength / Noise:
+                  </label>
+                  <span className="text-xs font-mono font-bold text-rose-400 px-2 py-0.5 rounded bg-rose-500/20">
                     {(simConfig.attack_fraction * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -292,267 +254,232 @@ export default function SimulationStudio({
                   min="0.05"
                   max="1.0"
                   step="0.05"
-                  value={simConfig.attack_fraction || 0.3}
-                  onChange={(e) => setSimConfig({ ...simConfig, attack_fraction: Number(e.target.value) })}
-                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-400"
+                  value={simConfig.attack_fraction}
+                  onChange={(e) => setSimConfig((prev) => ({ ...prev, attack_fraction: parseFloat(e.target.value) }))}
+                  className="w-full h-2 bg-obsidian-950 rounded-lg appearance-none cursor-pointer accent-rose-500"
                 />
-                <p className="text-[10px] text-rose-300/80 leading-relaxed">
-                  Controls the fraction of quantum states or channel measurements corrupted during simulation.
-                </p>
               </div>
             )}
 
-            {/* Run Button */}
+            {/* Big Action Button */}
             <button
-              disabled={loading}
               onClick={onRunSimulation}
-              className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center space-x-2 shadow-lg transition-all transform active:scale-95 ${
+              disabled={loading}
+              className={`w-full py-4 px-6 rounded-2xl font-display font-bold text-base text-black flex items-center justify-center space-x-3 shadow-quantum-glow transition-all transform active:scale-98 ${
                 loading
-                  ? "bg-slate-700 cursor-not-allowed"
-                  : "bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:to-indigo-500 shadow-cyan-500/25 border border-cyan-400/40"
+                  ? "bg-cyan-600/50 cursor-not-allowed opacity-80"
+                  : "bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 hover:from-cyan-300 hover:to-indigo-300 cursor-pointer"
               }`}
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Executing Qiskit Simulation...</span>
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                  <span>Executing Qiskit Aer...</span>
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4 fill-white" />
-                  <span>RUN QUANTUM SIMULATION</span>
+                  <Play className="w-5 h-5 fill-black" />
+                  <span>Run Quantum Simulation</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Right Column: Visualization & Detection Engine (7 cols) */}
-        <div className="lg:col-span-7 space-y-5">
-          {/* 1. Protocol Pipeline Diagram */}
-          <div className="rounded-xl glass-panel p-4 border border-slate-800">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
-                <Layers className="w-4 h-4 text-indigo-400" />
-                <span>Quantum Teleportation & QDS Protocol Flow</span>
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">Qiskit Aer Execution</span>
+        {/* Right Column: Visualizer, Detection Banner, Measurement Chart */}
+        <div className="lg:col-span-8 space-y-8">
+
+          {/* 5-Stage Protocol Pipeline Visualizer */}
+          <div className="rounded-3xl glass-panel p-7 border border-white/[0.1]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white flex items-center space-x-2.5">
+                <Layers className="w-5 h-5 text-quantum-cyan" />
+                <span>Xu-Wang QDS Protocol Execution Flow</span>
+              </h2>
+              <span className="text-xs text-slate-400 font-mono">5-Stage Teleportation</span>
             </div>
 
-            <div className="grid grid-cols-5 gap-1.5 text-center">
-              {pipelineStages.map((stg, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+              {pipelineStages.map((stage, idx) => (
                 <div
-                  key={stg.id}
-                  onClick={() => setActivePipelineStep(activePipelineStep === stg.id ? null : stg.id)}
-                  className={`p-2 rounded-lg border cursor-pointer transition-all ${
-                    activePipelineStep === stg.id
-                      ? "bg-cyan-950/80 border-cyan-400 text-cyan-200"
-                      : "bg-slate-900/80 hover:bg-slate-800 border-slate-800 text-slate-300"
+                  key={stage.id}
+                  onClick={() => setActivePipelineStep(activePipelineStep === stage.id ? null : stage.id)}
+                  className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 border text-center ${
+                    activePipelineStep === stage.id
+                      ? "bg-cyan-500/20 border-cyan-400 shadow-quantum-glow"
+                      : "bg-obsidian-950/80 border-white/[0.06] hover:border-white/[0.2] hover:bg-obsidian-900"
                   }`}
                 >
-                  <span className="text-[10px] font-bold block truncate">{stg.title}</span>
-                  <span className="text-[9px] font-mono text-cyan-400 block truncate mt-0.5">{stg.math}</span>
+                  <span className="text-xs font-bold text-slate-200 block mb-1">{stage.title}</span>
+                  <span className="text-xs font-mono font-bold text-quantum-cyan block bg-obsidian-900/90 py-1 rounded-lg border border-white/[0.04]">
+                    {stage.math}
+                  </span>
                 </div>
               ))}
             </div>
 
             {activePipelineStep && (
-              <div className="mt-3 p-3 rounded-lg bg-cyan-950/40 border border-cyan-800/40 text-xs text-slate-300 animate-fade-in">
-                <strong className="text-cyan-300 font-semibold">
-                  {pipelineStages.find((s) => s.id === activePipelineStep)?.title}:
-                </strong>{" "}
+              <div className="mt-4 p-4 rounded-2xl bg-cyan-950/30 border border-cyan-500/30 text-sm text-cyan-200">
                 {pipelineStages.find((s) => s.id === activePipelineStep)?.desc}
               </div>
             )}
           </div>
 
-          {/* 2. Detection Decision Result Banner */}
+          {/* Prominent Threat Detection Result Banner */}
           {lastResult && (
             <div
-              className={`rounded-xl p-5 border shadow-xl transition-all animate-fade-in ${
-                isLegitimate
-                  ? "bg-gradient-to-r from-emerald-950/70 via-slate-900 to-emerald-950/50 border-emerald-500/50 shadow-emerald-950/50"
-                  : "bg-gradient-to-r from-rose-950/80 via-slate-900 to-amber-950/50 border-rose-500/60 shadow-rose-950/50"
+              className={`rounded-3xl p-7 border transition-all ${
+                isThreat
+                  ? "bg-gradient-to-r from-rose-950/40 via-obsidian-900 to-rose-950/40 border-rose-500/40 shadow-[0_0_35px_rgba(244,63,94,0.2)]"
+                  : "bg-gradient-to-r from-emerald-950/40 via-obsidian-900 to-emerald-950/40 border-emerald-500/40 shadow-[0_0_35px_rgba(16,185,129,0.2)]"
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.08]">
+                <div className="flex items-center space-x-3.5">
                   <div
-                    className={`p-3 rounded-xl ${
-                      isLegitimate ? "bg-emerald-500/20 text-emerald-400" : "bg-rose-500/20 text-rose-400"
+                    className={`p-3 rounded-2xl ${
+                      isThreat ? "bg-rose-500/20 text-rose-400" : "bg-emerald-500/20 text-emerald-400"
                     }`}
                   >
-                    {isLegitimate ? <CheckCircle2 className="w-7 h-7" /> : <AlertTriangle className="w-7 h-7" />}
+                    {isThreat ? <ShieldAlert className="w-8 h-8" /> : <CheckCircle2 className="w-8 h-8" />}
                   </div>
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`text-xs font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded ${
-                          isLegitimate
-                            ? "bg-emerald-900/80 text-emerald-300 border border-emerald-700"
-                            : "bg-rose-900/80 text-rose-300 border border-rose-700"
-                        }`}
-                      >
-                        {isLegitimate ? "SIGNATURE VERIFIED" : "THREAT DETECTED"}
-                      </span>
-                      <span className="text-xs text-slate-400 font-mono">
-                        ID: {lastResult.experiment_id?.substring(0, 8)}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-extrabold text-white mt-1">
-                      {isLegitimate
-                        ? "Cryptographically Authentic Signature Confirmed"
-                        : `Malicious Activity Flagged (${lastResult.attack_type.toUpperCase()})`}
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Statistical Detection Verdict
+                    </span>
+                    <h3
+                      className={`text-2xl sm:text-3xl font-display font-extrabold tracking-tight ${
+                        isThreat ? "text-rose-400" : "text-emerald-300"
+                      }`}
+                    >
+                      {isThreat ? "THREAT DETECTED · SIGNATURE REJECTED" : "SIGNATURE VERIFIED · AUTHENTIC"}
                     </h3>
                   </div>
                 </div>
 
-                <div className="text-right hidden sm:block">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Decision</span>
+                <div className="sm:text-right">
+                  <span className="text-xs text-slate-400 block font-mono">Verification Mode</span>
+                  <span className="text-sm font-mono font-bold text-white">
+                    {lastResult.attack_type === "none" ? "Legitimate Baseline" : lastResult.attack_type.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mathematical Diagnostics Breakdown */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
+                  <span className="text-xs text-slate-400 block font-medium">Total Variation (TVD)</span>
+                  <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
+                    {(detection?.deviation ?? 0.0).toFixed(4)}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
+                  <span className="text-xs text-slate-400 block font-medium">Hypothesis p-value</span>
+                  <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
+                    {(detection?.p_value ?? 1.0).toFixed(4)}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
+                  <span className="text-xs text-slate-400 block font-medium">Wilson 95% Bound</span>
+                  <span className="text-sm font-extrabold font-mono text-cyan-300 mt-2 block">
+                    {detection?.confidence_interval
+                      ? `[${detection.confidence_interval[0].toFixed(2)}, ${detection.confidence_interval[1].toFixed(2)}]`
+                      : "[0.00, 0.05]"}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
+                  <span className="text-xs text-slate-400 block font-medium">Detector Decision</span>
                   <span
-                    className={`text-sm font-mono font-bold ${
-                      isLegitimate ? "text-emerald-400" : "text-rose-400"
+                    className={`text-base font-extrabold font-mono mt-2 block ${
+                      isThreat ? "text-rose-400" : "text-emerald-400"
                     }`}
                   >
-                    {detection?.decision || (isLegitimate ? "ACCEPT" : "REJECT")}
+                    {isThreat ? "ATTACK_FLAGGED" : "SIGNATURE_VALID"}
                   </span>
                 </div>
               </div>
 
-              {/* Statistical Diagnostics */}
-              <div className="mt-4 pt-3 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="text-slate-500 text-[10px] block uppercase">Statistical Method</span>
-                  <span className="font-mono font-semibold text-slate-200 truncate block">
-                    {detection?.statistical_method || "Total Variation Dist"}
-                  </span>
+              {/* Explainability Explanation */}
+              {detection?.reason && (
+                <div className="mt-5 p-4 rounded-2xl bg-obsidian-950/90 border border-white/[0.08] text-sm text-slate-300 leading-relaxed">
+                  <span className="font-bold text-white mr-2">Mathematical Rationale:</span>
+                  {detection.reason}
                 </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="text-slate-500 text-[10px] block uppercase">Deviation Statistic</span>
-                  <span
-                    className={`font-mono font-bold block ${
-                      (detection?.statistic ?? 0) > 0.1 ? "text-rose-400" : "text-emerald-400"
-                    }`}
-                  >
-                    {typeof detection?.statistic === "number"
-                      ? detection.statistic.toFixed(4)
-                      : "0.0000"}
-                  </span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="text-slate-500 text-[10px] block uppercase">p-Value</span>
-                  <span className="font-mono font-semibold text-cyan-300 block">
-                    {detection?.p_value !== null && detection?.p_value !== undefined
-                      ? detection.p_value < 0.001
-                        ? "< 0.001"
-                        : detection.p_value.toFixed(4)
-                      : "N/A (Context)"}
-                  </span>
-                </div>
-
-                <div className="p-2.5 rounded-lg bg-slate-950/60 border border-slate-800">
-                  <span className="text-slate-500 text-[10px] block uppercase">Confidence Bound</span>
-                  <span className="font-mono font-semibold text-indigo-300 block">95.0% Protocol CI</span>
-                </div>
-              </div>
-
-              {/* Explanation Reason */}
-              <div className="mt-3 p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 text-xs text-slate-300">
-                <span className="font-bold text-cyan-300">Detection Explanation: </span>
-                {detection?.reason ||
-                  (isLegitimate
-                    ? "Measurement counts match expected quantum protocol signature with zero significant deviation."
-                    : "Statistical anomaly detected beyond protocol-derived security bounds.")}
-              </div>
+              )}
             </div>
           )}
 
-          {/* 3. Measurement Probability Bar Chart */}
-          <div className="rounded-xl glass-panel p-5 border border-slate-800">
-            <div className="flex items-center justify-between mb-4">
+          {/* Expected vs. Observed Measurement Chart */}
+          <div className="rounded-3xl glass-panel p-7 border border-white/[0.1]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
               <div>
-                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-2">
-                  <BarChart2 className="w-4 h-4 text-cyan-400" />
-                  <span>Expected vs. Observed Measurement Distribution</span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Target basis: {simConfig.measurement_basis} | Total Shots: {simConfig.shots.toLocaleString()}
+                <h2 className="text-xl font-bold text-white flex items-center space-x-2.5">
+                  <BarChart2 className="w-6 h-6 text-quantum-cyan" />
+                  <span>Projective Measurement Probabilities</span>
+                </h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  Comparison between Expected QDS state projection vs Observed Qiskit Aer distribution
                 </p>
               </div>
-              <div className="flex items-center space-x-3 text-xs">
-                <span className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-cyan-500"></span>
-                  <span className="text-slate-300">Expected</span>
-                </span>
-                <span className="flex items-center space-x-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-purple-500"></span>
-                  <span className="text-slate-300">Observed</span>
-                </span>
-              </div>
+              <span className="text-xs font-mono px-3 py-1.5 rounded-xl bg-obsidian-950 text-slate-300 border border-white/[0.08] self-start sm:self-auto">
+                Basis: {simConfig.measurement_basis} | Shots: {simConfig.shots.toLocaleString()}
+              </span>
             </div>
 
-            <div className="h-60 w-full">
+            {/* Recharts Bar Chart */}
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="state" stroke="#94a3b8" fontSize={12} tickLine={false} />
-                  <YAxis
-                    stroke="#94a3b8"
-                    fontSize={11}
-                    unit="%"
-                    domain={[0, 100]}
-                    tickLine={false}
-                  />
+                <BarChart data={chartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="state" stroke="#94a3b8" tick={{ fill: "#cbd5e1", fontSize: 14, fontWeight: "bold" }} />
+                  <YAxis unit="%" stroke="#94a3b8" tick={{ fill: "#94a3b8", fontSize: 12 }} domain={[0, 100]} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#0b1120",
-                      borderColor: "#334155",
-                      borderRadius: "8px",
-                      fontSize: "12px",
+                      backgroundColor: "#0A0E17",
+                      borderColor: "rgba(255,255,255,0.15)",
+                      borderRadius: "16px",
+                      boxShadow: "0 12px 30px rgba(0,0,0,0.8)",
+                      color: "#F8FAFC",
+                      fontSize: "13px",
                     }}
-                    formatter={(value, name) => [`${value}%`, name]}
                   />
-                  <Bar dataKey="Expected" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Observed" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ paddingTop: "14px", fontSize: "13px", fontWeight: "600" }} />
+                  <Bar dataKey="Expected" fill="#6366F1" radius={[8, 8, 0, 0]} barSize={32} />
+                  <Bar dataKey="Observed" fill={isThreat ? "#F43F5E" : "#00F2FE"} radius={[8, 8, 0, 0]} barSize={32} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
-            {/* Detailed Counts Breakdown Table */}
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
+            {/* Detailed 2-Qubit State Table */}
+            <div className="mt-8 overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="py-2">Quantum State</th>
-                    <th className="py-2">Expected Prob</th>
-                    <th className="py-2">Observed Prob</th>
-                    <th className="py-2">Actual Counts</th>
-                    <th className="py-2">Deviation</th>
+                  <tr className="border-b border-white/[0.08] text-xs font-bold uppercase text-slate-400 tracking-wider">
+                    <th className="pb-3 px-3">Quantum State</th>
+                    <th className="pb-3 px-3">Expected %</th>
+                    <th className="pb-3 px-3">Observed %</th>
+                    <th className="pb-3 px-3">Raw Shot Count</th>
+                    <th className="pb-3 px-3 text-right">Deviation</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                <tbody className="divide-y divide-white/[0.04] font-mono text-sm">
                   {chartData.map((row) => {
-                    const diff = Math.abs(Number(row.Observed) - Number(row.Expected));
-                    const isTarget = Number(row.Expected) > 0;
+                    const diff = (row.Observed - row.Expected).toFixed(1);
                     return (
-                      <tr key={row.state} className={isTarget ? "bg-cyan-950/20 font-bold" : ""}>
-                        <td className="py-2 text-cyan-300">{row.state}</td>
-                        <td className="py-2">{row.Expected}%</td>
-                        <td className="py-2">{row.Observed}%</td>
-                        <td className="py-2">{row.count.toLocaleString()} shots</td>
-                        <td className="py-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[11px] ${
-                              diff > 10.0
-                                ? "bg-rose-950 text-rose-300 border border-rose-800"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {diff.toFixed(1)}%
-                          </span>
+                      <tr key={row.state} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3 px-3 font-bold text-white">{row.state}</td>
+                        <td className="py-3 px-3 text-indigo-300 font-semibold">{row.Expected}%</td>
+                        <td className="py-3 px-3 font-bold text-quantum-cyan">{row.Observed}%</td>
+                        <td className="py-3 px-3 text-slate-300">{row.count.toLocaleString()} shots</td>
+                        <td
+                          className={`py-3 px-3 text-right font-bold ${
+                            Math.abs(diff) > 5 ? "text-rose-400" : "text-emerald-400"
+                          }`}
+                        >
+                          {diff > 0 ? `+${diff}%` : `${diff}%`}
                         </td>
                       </tr>
                     );
@@ -561,6 +488,7 @@ export default function SimulationStudio({
               </table>
             </div>
           </div>
+
         </div>
       </div>
     </div>

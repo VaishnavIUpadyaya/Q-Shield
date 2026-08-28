@@ -363,6 +363,46 @@ We do not currently have access to an official SIH26141 dataset, and this README
 
 ---
 
+## Getting Started & Running Locally
+
+### 1. Environment & Firebase Credentials
+
+1. Place your Firebase service account JSON key in:
+   ```
+   firebase/serviceAccountKey.json
+   ```
+2. Create a `.env` file in the project root:
+   ```env
+   GOOGLE_APPLICATION_CREDENTIALS=firebase/serviceAccountKey.json
+   ```
+
+### 2. Run Backend Server (FastAPI + Qiskit Aer)
+
+```bash
+# Using uv or virtual environment:
+uv run uvicorn backend.main:app --reload --port 8000
+```
+Backend will be live at `http://127.0.0.1:8000` with interactive API docs at `http://127.0.0.1:8000/docs`.
+
+### 3. Run Frontend Dashboard (Next.js + Tailwind CSS)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:3000` in your browser to interact with the Q-SHIELD Quantum Threat Detection Studio.
+
+### 4. Run Automated Test Suite
+
+```bash
+uv run pytest
+```
+Executes all 88 unit and integration tests across P1–P5.
+
+---
+
 ## Disclaimer
 
 This project is a software simulation and research prototype. Results from simulated quantum environments are not proof of security for real-world quantum communication systems. Security conclusions depend on the correctness of the implemented QDS protocol, the attack model used, the statistical analysis applied, and the assumptions underlying all of these.
+

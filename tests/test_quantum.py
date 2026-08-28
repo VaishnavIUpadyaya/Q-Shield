@@ -1,6 +1,7 @@
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
 from quantum.bell_states import create_bell_pair
+from quantum.teleportation import create_teleportation_circuit
 from quantum.states import (
     prepare_zero_state,
     prepare_one_state,
@@ -54,3 +55,8 @@ def test_create_bell_pair():
 
     assert circuit.num_qubits == 2
     assert circuit.num_clbits == 0
+def test_teleportation_circuit():
+    circuit = create_teleportation_circuit("plus")
+
+    assert circuit.num_qubits == 3
+    assert circuit.num_clbits == 2

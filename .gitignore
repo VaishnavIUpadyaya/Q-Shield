@@ -47,3 +47,6 @@ firebase-adminsdk*.json
 
 # Generated experiment data
 dataset/generated/
+
+.env
+firebase/serviceAccountKey.json

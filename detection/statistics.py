@@ -81,3 +81,60 @@ def distribution_difference(
         )
         for outcome in outcomes
     )
+
+
+def wilson_interval(
+    successes: int,
+    trials: int,
+    confidence: float = 0.95,
+) -> tuple[float, float]:
+    """Calculate the Wilson confidence interval for a binomial proportion."""
+
+    if trials <= 0:
+        raise ValueError("trials must be greater than zero.")
+
+    if successes < 0 or successes > trials:
+        raise ValueError(
+            "successes must be between 0 and trials."
+        )
+
+    if not 0 < confidence < 1:
+        raise ValueError(
+            "confidence must be between 0 and 1."
+        )
+
+    # Standard normal quantiles for supported confidence levels.
+    z_values = {
+        0.90: 1.6448536269514722,
+        0.95: 1.959963984540054,
+        0.99: 2.5758293035489004,
+    }
+
+    if confidence not in z_values:
+        raise ValueError(
+            "Supported confidence levels are 0.90, 0.95, and 0.99."
+        )
+
+    z = z_values[confidence]
+
+    p_hat = successes / trials
+
+    denominator = 1 + (z**2 / trials)
+
+    center = (
+        p_hat + (z**2 / (2 * trials))
+    ) / denominator
+
+    margin = (
+        z
+        * math.sqrt(
+            (p_hat * (1 - p_hat) / trials)
+            + (z**2 / (4 * trials**2))
+        )
+        / denominator
+    )
+
+    lower = max(0.0, center - margin)
+    upper = min(1.0, center + margin)
+
+    return lower, upper

@@ -1,5 +1,6 @@
 from qiskit import QuantumCircuit
 from qiskit_aer import AerSimulator
+from quantum.bell_states import create_bell_pair
 from quantum.states import (
     prepare_zero_state,
     prepare_one_state,
@@ -8,11 +9,7 @@ from quantum.states import (
 )
 
 def test_bell_state():
-    circuit = QuantumCircuit(2)
-
-    # Create Bell state
-    circuit.h(0)
-    circuit.cx(0, 1)
+    circuit = create_bell_pair()
 
     # Measure both qubits
     circuit.measure_all()
@@ -52,3 +49,8 @@ def test_plus_state():
 def test_minus_state():
     circuit = prepare_minus_state()
     assert circuit.num_qubits == 1
+def test_create_bell_pair():
+    circuit = create_bell_pair()
+
+    assert circuit.num_qubits == 2
+    assert circuit.num_clbits == 0

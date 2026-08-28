@@ -268,55 +268,7 @@ export default function DashboardOverview({ metrics, onNavigateToSim, onRunPrese
           </div>
         </div>
       </div>
-
-      {/* 6-Engineer Architecture Breakdown */}
-      <div className="rounded-xl glass-panel p-6 border border-slate-800">
-        <h2 className="text-lg font-bold text-slate-100 mb-2 flex items-center space-x-2">
-          <Layers className="w-5 h-5 text-indigo-400" />
-          <span>System Architecture & Role Pipeline (P1 — P6)</span>
-        </h2>
-        <p className="text-xs text-slate-400 mb-6">
-          End-to-end execution flow connecting Qiskit quantum simulations, statistical verification, and API visualization.
-        </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-cyan-800/40">
-            <span className="text-[10px] font-mono font-bold text-cyan-400 block mb-1">P1</span>
-            <span className="text-xs font-bold text-white block">Quantum Protocol</span>
-            <span className="text-[10px] text-slate-400 block mt-1">Qiskit Aer, Bell Pairs, Teleportation</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-emerald-800/40">
-            <span className="text-[10px] font-mono font-bold text-emerald-400 block mb-1">P2</span>
-            <span className="text-xs font-bold text-white block">Statistical Detector</span>
-            <span className="text-[10px] text-slate-400 block mt-1">Total Variation & Wilson Bounds</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-rose-800/40">
-            <span className="text-[10px] font-mono font-bold text-rose-400 block mb-1">P3</span>
-            <span className="text-xs font-bold text-white block">Attack Engine</span>
-            <span className="text-[10px] text-slate-400 block mt-1">Forgery, Replay, Channel Noise</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-purple-800/40">
-            <span className="text-[10px] font-mono font-bold text-purple-400 block mb-1">P4</span>
-            <span className="text-xs font-bold text-white block">Experiment Runner</span>
-            <span className="text-[10px] text-slate-400 block mt-1">N-Trials, Security Metrics, Datasets</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-amber-800/40">
-            <span className="text-[10px] font-mono font-bold text-amber-400 block mb-1">P5</span>
-            <span className="text-xs font-bold text-white block">FastAPI Backend</span>
-            <span className="text-[10px] text-slate-400 block mt-1">REST API, Firestore Storage</span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-slate-950/60 border border-pink-800/40">
-            <span className="text-[10px] font-mono font-bold text-pink-400 block mb-1">P6</span>
-            <span className="text-xs font-bold text-white block">React Dashboard</span>
-            <span className="text-[10px] text-slate-400 block mt-1">Interactive UI, Charts, Real-time Analytics</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
+

@@ -207,7 +207,7 @@ export default function SimulationStudio({
               <input
                 type="range"
                 min="100"
-                max="5000"
+                max="100000"
                 step="100"
                 value={simConfig.shots}
                 onChange={(e) => setSimConfig((prev) => ({ ...prev, shots: Number(e.target.value) }))}
@@ -216,7 +216,7 @@ export default function SimulationStudio({
               <div className="flex justify-between text-xs text-slate-400 mt-1 font-mono">
                 <span>100</span>
                 <span>2,500</span>
-                <span>5,000</span>
+                <span>1,00,000</span>
               </div>
             </div>
 

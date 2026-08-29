@@ -17,6 +17,16 @@ class ProportionTestResult:
     interval: tuple[float, float]
     compatible: bool
 
+    @property
+    def accepted(self) -> bool:
+        """Alias for compatible — whether the distribution is consistent."""
+        return self.compatible
+
+    @property
+    def p_value(self) -> float | None:
+        """Approximate p-value proxy: 0.0 if outside CI, 1.0 if inside."""
+        return 1.0 if self.compatible else 0.0
+
 
 def evaluate_proportion(
     successes: int,
@@ -51,4 +61,4 @@ def evaluate_proportion(
         confidence=confidence,
         interval=(lower, upper),
         compatible=compatible,
-    )
+    )

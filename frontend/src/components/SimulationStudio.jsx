@@ -99,8 +99,8 @@ export default function SimulationStudio({
     {
       id: "measurement",
       title: "5. Bob Measurement",
-      math: `${simConfig.measurement_basis} Basis (Z)`,
-      desc: "Bob measures signature state in computational basis to verify authenticity.",
+      math: `${simConfig.measurement_basis} Basis`,
+      desc: `Bob measures signature state in ${simConfig.measurement_basis}-basis to verify authenticity.`,
     },
   ];
 
@@ -370,7 +370,7 @@ export default function SimulationStudio({
                 <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
                   <span className="text-xs text-slate-400 block font-medium">Total Variation (TVD)</span>
                   <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
-                    {(detection?.deviation ?? 0.0).toFixed(4)}
+                    {(detection?.deviation ?? detection?.statistic ?? 0.0).toFixed(4)}
                   </span>
                 </div>
 

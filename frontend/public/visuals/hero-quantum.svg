@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="720" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00E5FF"/>
+      <stop offset="0.5" stop-color="#4F7CFF"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="180" y1="80" x2="540" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220" stop-opacity="0.2"/>
+      <stop offset="1" stop-color="#06101C" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="46%" r="42%">
+      <stop stop-color="#22D3EE" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#06080D" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+  <rect width="720" height="560" rx="36" fill="#070B14"/>
+  <circle cx="360" cy="260" r="210" fill="url(#glow)"/>
+  <circle cx="360" cy="260" r="188" stroke="url(#g1)" stroke-opacity="0.25" stroke-width="1.2"/>
+  <circle cx="360" cy="260" r="148" stroke="url(#g1)" stroke-opacity="0.4" stroke-width="1.5" stroke-dasharray="6 10"/>
+  <circle cx="360" cy="260" r="108" stroke="#67E8F9" stroke-opacity="0.55" stroke-width="1.4"/>
+  <ellipse cx="360" cy="260" rx="220" ry="78" stroke="#A78BFA" stroke-opacity="0.35" transform="rotate(-18 360 260)"/>
+  <ellipse cx="360" cy="260" rx="200" ry="70" stroke="#22D3EE" stroke-opacity="0.28" transform="rotate(32 360 260)"/>
+  <path d="M360 118 L428 158 L428 238 L360 278 L292 238 L292 158 Z" fill="url(#g2)" stroke="url(#g1)" stroke-width="2.4"/>
+  <path d="M360 148 L404 174 L404 226 L360 252 L316 226 L316 174 Z" fill="#09111C" stroke="#67E8F9" stroke-opacity="0.7" stroke-width="1.6"/>
+  <path d="M344 206h32v36c0 10-7 18-16 21-9-3-16-11-16-21v-36z" fill="url(#g1)" opacity="0.9"/>
+  <circle cx="360" cy="188" r="8" fill="#E0F2FE"/>
+  <circle cx="248" cy="128" r="6" fill="#22D3EE"/>
+  <circle cx="472" cy="118" r="5" fill="#C084FC"/>
+  <circle cx="512" cy="280" r="6" fill="#38BDF8"/>
+  <circle cx="208" cy="292" r="5" fill="#A78BFA"/>
+  <circle cx="360" cy="412" r="5" fill="#22D3EE"/>
+  <path d="M248 128 L316 174" stroke="#22D3EE" stroke-opacity="0.55"/>
+  <path d="M472 118 L404 174" stroke="#C084FC" stroke-opacity="0.55"/>
+  <path d="M208 292 L292 238" stroke="#A78BFA" stroke-opacity="0.45"/>
+  <path d="M512 280 L428 238" stroke="#38BDF8" stroke-opacity="0.45"/>
+  <path d="M360 412 L360 278" stroke="#67E8F9" stroke-opacity="0.4" stroke-dasharray="4 6"/>
+  <rect x="86" y="430" width="548" height="72" rx="16" fill="#0B1320" stroke="#1E3A4C"/>
+  <rect x="108" y="452" width="84" height="8" rx="4" fill="#22D3EE" opacity="0.8"/>
+  <rect x="108" y="468" width="132" height="6" rx="3" fill="#64748B"/>
+  <rect x="280" y="448" width="10" height="28" rx="2" fill="#22D3EE" opacity="0.35"/>
+  <rect x="298" y="440" width="10" height="36" rx="2" fill="#818CF8" opacity="0.55"/>
+  <rect x="316" y="456" width="10" height="20" rx="2" fill="#22D3EE" opacity="0.4"/>
+  <rect x="334" y="436" width="10" height="40" rx="2" fill="#C084FC" opacity="0.6"/>
+  <rect x="352" y="450" width="10" height="26" rx="2" fill="#38BDF8" opacity="0.5"/>
+  <rect x="370" y="442" width="10" height="34" rx="2" fill="#22D3EE" opacity="0.7"/>
+  <rect x="388" y="458" width="10" height="18" rx="2" fill="#A78BFA" opacity="0.45"/>
+  <text x="430" y="462" fill="#94A3B8" font-family="ui-sans-serif, system-ui" font-size="11">QDS TELEPORT CHANNEL</text>
+  <text x="430" y="482" fill="#E2E8F0" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="700">Bell pair intact · 2-qubit verify</text>
+</svg>

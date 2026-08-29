@@ -370,15 +370,15 @@ export default function SimulationStudio({
                 <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
                   <span className="text-xs text-slate-400 block font-medium">Total Variation (TVD)</span>
                   <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
-                    {(detection?.deviation ?? detection?.statistic ?? 0.0).toFixed(4)}
+                   {(detection?.statistic ?? detection?.deviation ?? 0.0).toFixed(4)}
                   </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">
                   <span className="text-xs text-slate-400 block font-medium">Hypothesis p-value</span>
-                  <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
-                    {(detection?.p_value ?? 1.0).toFixed(4)}
-                  </span>
+                 <span className="text-2xl font-extrabold font-mono text-white mt-1 block">
+                  {(detection?.p_value ?? 1.0).toFixed(4)}
+                 </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-obsidian-950/80 border border-white/[0.06]">

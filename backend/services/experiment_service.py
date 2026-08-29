@@ -124,6 +124,8 @@ def _detect_attack(
         confidence=confidence,
     )
 
+    wilson_ci = list(statistical_test.interval)
+
     # Context-based attacks.
     if attack_type in {
         "replay",
@@ -134,6 +136,8 @@ def _detect_attack(
             "attack_detected": True,
             "statistical_method": "context_check",
             "statistic": difference,
+            "deviation": difference,
+            "confidence_interval": wilson_ci,
             "p_value": None,
             "reason": (
                 f"{attack_type} is rejected by security "
@@ -148,6 +152,8 @@ def _detect_attack(
             "attack_detected": False,
             "statistical_method": "distribution_difference",
             "statistic": difference,
+            "deviation": difference,
+            "confidence_interval": wilson_ci,
             "p_value": getattr(
                 statistical_test,
                 "p_value",
@@ -178,6 +184,8 @@ def _detect_attack(
         "attack_detected": detected,
         "statistical_method": "distribution_difference",
         "statistic": difference,
+        "deviation": difference,
+        "confidence_interval": wilson_ci,
         "p_value": getattr(
             statistical_test,
             "p_value",
@@ -192,6 +200,7 @@ def _detect_attack(
             "the expected statistical range."
         ),
     }
+
 
 
 def run_experiment(request: ExperimentRequest):

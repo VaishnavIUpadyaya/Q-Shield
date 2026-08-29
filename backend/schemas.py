@@ -51,7 +51,9 @@ class DetectionResult(BaseModel):
     attack_detected: bool
     statistical_method: Optional[str] = None
     statistic: Optional[float] = None
+    deviation: Optional[float] = None
     p_value: Optional[float] = None
+    confidence_interval: Optional[List[float]] = None
     reason: str
 
 

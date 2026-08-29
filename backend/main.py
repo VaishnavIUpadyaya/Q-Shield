@@ -31,7 +31,6 @@ from backend.services.history_service import (
 from experiments.metrics import summarize_results
 
 
-
 app = FastAPI(
     title="Q-Shield API",
     description="Quantum Digital Signature verification and threat detection API",
@@ -95,11 +94,39 @@ def run_simulation_endpoint(request: ExperimentRequest):
     """
     Run an end-to-end quantum simulation with optional attack injection
     and statistical threat detection.
+
+    Experiment results are always saved to the in-memory history.
+    Firestore persistence is attempted separately and fails gracefully
+    when Firebase is not configured or unavailable.
     """
     try:
         result = run_experiment(request)
+
+        # ---------------------------------------------------------
+        # 1. Save experiment to the active in-memory history
+        # ---------------------------------------------------------
         save_experiment(result)
+
+        # ---------------------------------------------------------
+        # 2. Persist experiment to Firebase Firestore
+        # ---------------------------------------------------------
+        # Lazy import keeps the API operational even when Firebase
+        # dependencies or credentials are not configured.
+        try:
+            from experiments.firestore_storage import (
+                save_experiment_to_firestore,
+            )
+
+            save_experiment_to_firestore(result)
+
+        except Exception as firestore_error:
+            # Firestore failure must not fail the simulation request.
+            print(
+                f"Firestore persistence failed: {firestore_error}"
+            )
+
         return result
+
     except ValueError as error:
         raise HTTPException(
             status_code=400,
@@ -132,23 +159,36 @@ def get_security_metrics():
 
     # Format trials for summarize_results
     trial_records = []
+
     for exp in history:
         attack_type = exp.get("attack_type", "none")
         detection = exp.get("detection_result") or {}
+
         is_attack = attack_type != "none"
-        attack_detected = detection.get("attack_detected", is_attack)
+        attack_detected = detection.get(
+            "attack_detected",
+            is_attack,
+        )
 
         trial_records.append({
             "attack_type": attack_type,
             "detection_result": {
                 "accepted": not attack_detected,
-                "decision": "ACCEPT" if not attack_detected else "REJECT",
+                "decision": (
+                    "ACCEPT"
+                    if not attack_detected
+                    else "REJECT"
+                ),
             },
         })
 
     summary = summarize_results(trial_records)
+
     summary["total_experiments"] = len(history)
-    summary["forgery_probability"] = summary.get("false_acceptance_rate", 0.0)
+    summary["forgery_probability"] = summary.get(
+        "false_acceptance_rate",
+        0.0,
+    )
 
     return summary
 
@@ -253,6 +293,16 @@ def sign_and_verify(request: SignRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    print("Starting Q-SHIELD Backend on http://127.0.0.1:8000 ...")
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True, app_dir=str(PROJECT_ROOT))
-
+
+    print(
+        "Starting Q-SHIELD Backend on "
+        "http://127.0.0.1:8000 ..."
+    )
+
+    uvicorn.run(
+        "backend.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        app_dir=str(PROJECT_ROOT),
+    )

@@ -7,11 +7,17 @@ import SimulationStudio from "@/components/SimulationStudio";
 import BatchExperimentRunner from "@/components/BatchExperimentRunner";
 import ThreatAnalytics from "@/components/ThreatAnalytics";
 import ExperimentHistory from "@/components/ExperimentHistory";
-import { checkBackendHealth, runSimulation, getMetrics, getExperimentHistory } from "@/services/api";
+import {
+  checkBackendHealth,
+  runSimulation,
+  getMetrics,
+  getExperimentHistory,
+} from "@/services/api";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("overview");
   const [backendStatus, setBackendStatus] = useState({ online: false });
+
   const [metrics, setMetrics] = useState({
     total_experiments: 0,
     detection_rate: 1.0,
@@ -19,6 +25,7 @@ export default function Home() {
     false_rejection_rate: 0.0,
     accuracy: 1.0,
   });
+
   const [simConfig, setSimConfig] = useState({
     message: "00",
     signing_state: "default",
@@ -28,6 +35,7 @@ export default function Home() {
     attack_type: "none",
     attack_fraction: 0.35,
   });
+
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [history, setHistory] = useState([]);
@@ -41,8 +49,10 @@ export default function Home() {
     setMetrics(m);
 
     const h = await getExperimentHistory();
+
     if (h && h.length > 0) {
       setHistory(h);
+
       if (!lastResult) {
         setLastResult(h[h.length - 1]);
       }
@@ -51,14 +61,18 @@ export default function Home() {
 
   useEffect(() => {
     refreshData();
+
     const interval = setInterval(refreshData, 6000);
+
     return () => clearInterval(interval);
   }, []);
 
   const handleRunSimulation = async () => {
     setLoading(true);
+
     try {
       const result = await runSimulation(simConfig);
+
       setLastResult(result);
       setHistory((prev) => [result, ...prev]);
 
@@ -79,11 +93,13 @@ export default function Home() {
       message: msg,
       attack_fraction: fraction,
     }));
+
     setActiveTab("simulation");
   };
 
   const handleQuickDemo = async () => {
     setActiveTab("simulation");
+
     setSimConfig({
       message: "00",
       signing_state: "default",
@@ -93,7 +109,9 @@ export default function Home() {
       attack_type: "forgery",
       attack_fraction: 0.4,
     });
+
     setLoading(true);
+
     try {
       const result = await runSimulation({
         message: "00",
@@ -103,8 +121,10 @@ export default function Home() {
         attack_fraction: 0.4,
         measurement_basis: "Z",
       });
+
       setLastResult(result);
       setHistory((prev) => [result, ...prev]);
+
       const updatedMetrics = await getMetrics();
       setMetrics(updatedMetrics);
     } finally {
@@ -122,7 +142,7 @@ export default function Home() {
         onQuickRun={handleQuickDemo}
       />
 
-      {/* Main Content View with Spacious Layout */}
+      {/* Main Content View */}
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 lg:px-10 py-10">
         {activeTab === "overview" && (
           <DashboardOverview
@@ -148,7 +168,13 @@ export default function Home() {
           />
         )}
 
-        {activeTab === "threats" && <ThreatAnalytics />}
+        {/* Fix #4: Connect ThreatAnalytics to live app data */}
+        {activeTab === "threats" && (
+          <ThreatAnalytics
+            metrics={metrics}
+            history={history}
+          />
+        )}
 
         {activeTab === "history" && (
           <ExperimentHistory
@@ -166,12 +192,20 @@ export default function Home() {
       <footer className="glass-panel border-t border-white/[0.06] mt-16 py-8 text-sm text-slate-400">
         <div className="max-w-[1440px] mx-auto px-6 sm:px-8 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-3 font-medium">
-            <span className="font-display font-extrabold text-white">Q-SHIELD</span>
+            <span className="font-display font-extrabold text-white">
+              Q-SHIELD
+            </span>
+
             <span>·</span>
-            <span>SIH26141 Quantum-Inspired Cyber Threat Detection Framework</span>
+
+            <span>
+              SIH26141 Quantum-Inspired Cyber Threat Detection Framework
+            </span>
           </div>
+
           <div className="text-xs font-mono text-slate-500">
-            Engineered with Qiskit Aer · FastAPI · Next.js · Zero AI/ML Mathematical Statistics
+            Engineered with Qiskit Aer · FastAPI · Next.js · Zero AI/ML
+            Mathematical Statistics
           </div>
         </div>
       </footer>

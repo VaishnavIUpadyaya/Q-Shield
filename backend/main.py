@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -9,7 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from quantum.protocol import (
     SUPPORTED_MESSAGES,
@@ -20,7 +20,6 @@ from quantum.protocol import (
 from backend.schemas import (
     ExperimentRequest,
     ExperimentResponse,
-    AttackInfo,
 )
 from backend.routers import attacks, experiments, results
 from backend.services.experiment_service import run_experiment
@@ -37,6 +36,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # Enable CORS for Next.js / React frontend
 app.add_middleware(
     CORSMiddleware,
@@ -45,6 +45,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # Include teammate routers
 app.include_router(attacks.router)
@@ -95,20 +96,27 @@ def run_simulation_endpoint(request: ExperimentRequest):
     Run an end-to-end quantum simulation with optional attack injection
     and statistical threat detection.
 
-    Experiment results are always saved to the in-memory history.
-    Firestore persistence is attempted separately and fails gracefully
-    when Firebase is not configured or unavailable.
+    Experiment results are first saved to the active in-memory history.
+    They are then persisted to Firebase Firestore when Firebase is
+    configured and available.
+
+    Firestore failures are handled gracefully so that a missing
+    credential file or Firebase configuration does not cause the
+    simulation request to fail.
     """
     try:
+        # ---------------------------------------------------------
+        # 1. Run the quantum experiment
+        # ---------------------------------------------------------
         result = run_experiment(request)
 
         # ---------------------------------------------------------
-        # 1. Save experiment to the active in-memory history
+        # 2. Save experiment to in-memory history
         # ---------------------------------------------------------
         save_experiment(result)
 
         # ---------------------------------------------------------
-        # 2. Persist experiment to Firebase Firestore
+        # 3. Persist experiment to Firebase Firestore
         # ---------------------------------------------------------
         # Lazy import keeps the API operational even when Firebase
         # dependencies or credentials are not configured.
@@ -120,11 +128,13 @@ def run_simulation_endpoint(request: ExperimentRequest):
             save_experiment_to_firestore(result)
 
         except Exception as firestore_error:
-            # Firestore failure must not fail the simulation request.
+            # Firestore failure must never fail the simulation request.
             print(
                 f"Firestore persistence failed: {firestore_error}"
             )
 
+        # Return the successful experiment result regardless of
+        # whether Firestore persistence succeeded.
         return result
 
     except ValueError as error:
@@ -137,7 +147,8 @@ def run_simulation_endpoint(request: ExperimentRequest):
 @app.get("/metrics")
 def get_security_metrics():
     """
-    Compute and return aggregated security metrics across all experiment trials.
+    Compute and return aggregated security metrics across all
+    experiment trials.
     """
     history = get_all_experiments()
 
@@ -157,7 +168,7 @@ def get_security_metrics():
             "forgery_probability": 0.0,
         }
 
-    # Format trials for summarize_results
+    # Format experiments as trial records for summarize_results
     trial_records = []
 
     for exp in history:
@@ -165,26 +176,30 @@ def get_security_metrics():
         detection = exp.get("detection_result") or {}
 
         is_attack = attack_type != "none"
+
         attack_detected = detection.get(
             "attack_detected",
             is_attack,
         )
 
-        trial_records.append({
-            "attack_type": attack_type,
-            "detection_result": {
-                "accepted": not attack_detected,
-                "decision": (
-                    "ACCEPT"
-                    if not attack_detected
-                    else "REJECT"
-                ),
-            },
-        })
+        trial_records.append(
+            {
+                "attack_type": attack_type,
+                "detection_result": {
+                    "accepted": not attack_detected,
+                    "decision": (
+                        "ACCEPT"
+                        if not attack_detected
+                        else "REJECT"
+                    ),
+                },
+            }
+        )
 
     summary = summarize_results(trial_records)
 
     summary["total_experiments"] = len(history)
+
     summary["forgery_probability"] = summary.get(
         "false_acceptance_rate",
         0.0,
@@ -208,7 +223,9 @@ def create_signature(request: SignRequest):
             "message": signature.message,
             "signing_state": signature.signing_state,
             "sender_measurement": signature.sender_measurement,
-            "public_verification_info": signature.public_verification_info,
+            "public_verification_info": (
+                signature.public_verification_info
+            ),
         }
 
     except ValueError as error:
@@ -255,6 +272,7 @@ def verify_signature(request: VerifyRequest):
 def sign_and_verify(request: SignRequest):
     """
     Complete P1 real-time flow:
+
     Message -> QDS Sign -> QDS Verify -> API Response
     """
     try:
@@ -273,14 +291,18 @@ def sign_and_verify(request: SignRequest):
                 "message": signature.message,
                 "signing_state": signature.signing_state,
                 "sender_measurement": signature.sender_measurement,
-                "public_verification_info": signature.public_verification_info,
+                "public_verification_info": (
+                    signature.public_verification_info
+                ),
             },
             "verification": {
                 "valid": verification.valid,
                 "message": verification.message,
                 "measurement_counts": verification.measurement_counts,
                 "measurement_basis": verification.measurement_basis,
-                "expected_distribution": verification.expected_distribution,
+                "expected_distribution": (
+                    verification.expected_distribution
+                ),
             },
         }
 

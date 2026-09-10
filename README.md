@@ -398,7 +398,7 @@ Open `http://localhost:3000` in your browser to interact with the Q-SHIELD Quant
 ```bash
 uv run pytest
 ```
-Executes all 88 unit and integration tests across P1–P5.
+Executes all 88 unit and integration tests.
 
 ---
 

@@ -57,32 +57,75 @@ def verify_password(
     )
 
 
+DEMO_PASSWORDS = {
+    "alice": "qshield123",
+    "bob": "qshield123",
+    "admin": "qshield123",
+    "eve": "qshield123",
+}
+
+DEMO_USERS: Dict[str, Dict] = {
+    "alice": {
+        "user_id": "demo-alice-001",
+        "username": "alice",
+        "email": "alice@qshield.quantum",
+        "password_hash": hash_password(DEMO_PASSWORDS["alice"]),
+        "role": "signer",
+    },
+    "bob": {
+        "user_id": "demo-bob-002",
+        "username": "bob",
+        "email": "bob@qshield.quantum",
+        "password_hash": hash_password(DEMO_PASSWORDS["bob"]),
+        "role": "verifier",
+    },
+    "admin": {
+        "user_id": "demo-admin-003",
+        "username": "admin",
+        "email": "admin@qshield.quantum",
+        "password_hash": hash_password(DEMO_PASSWORDS["admin"]),
+        "role": "admin",
+    },
+    "eve": {
+        "user_id": "demo-eve-004",
+        "username": "eve",
+        "email": "eve@adversary.network",
+        "password_hash": hash_password(DEMO_PASSWORDS["eve"]),
+        "role": "adversary",
+    },
+}
+
 
 def get_user_by_username(
     username: str,
 ) -> Optional[Dict]:
     """
-    Find a user by username in Firestore.
+    Find a user by username in DEMO_USERS or Firestore.
     """
+    if username in DEMO_USERS:
+        return DEMO_USERS[username].copy()
 
-    client = _get_firestore_client()
+    try:
+        client = _get_firestore_client()
 
-    results = (
-        client
-        .collection("users")
-        .where(
-            "username",
-            "==",
-            username,
+        results = (
+            client
+            .collection("users")
+            .where(
+                "username",
+                "==",
+                username,
+            )
+            .limit(1)
+            .stream()
         )
-        .limit(1)
-        .stream()
-    )
 
-    for document in results:
-        user = document.to_dict()
-        user["user_id"] = document.id
-        return user
+        for document in results:
+            user = document.to_dict()
+            user["user_id"] = document.id
+            return user
+    except Exception:
+        pass
 
     return None
 
@@ -91,27 +134,33 @@ def get_user_by_email(
     email: str,
 ) -> Optional[Dict]:
     """
-    Find a user by email in Firestore.
+    Find a user by email in DEMO_USERS or Firestore.
     """
+    for user in DEMO_USERS.values():
+        if user["email"] == email:
+            return user.copy()
 
-    client = _get_firestore_client()
+    try:
+        client = _get_firestore_client()
 
-    results = (
-        client
-        .collection("users")
-        .where(
-            "email",
-            "==",
-            email,
+        results = (
+            client
+            .collection("users")
+            .where(
+                "email",
+                "==",
+                email,
+            )
+            .limit(1)
+            .stream()
         )
-        .limit(1)
-        .stream()
-    )
 
-    for document in results:
-        user = document.to_dict()
-        user["user_id"] = document.id
-        return user
+        for document in results:
+            user = document.to_dict()
+            user["user_id"] = document.id
+            return user
+    except Exception:
+        pass
 
     return None
 

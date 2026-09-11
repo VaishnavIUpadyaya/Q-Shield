@@ -234,3 +234,54 @@ def test_rbac_rejects_unauthorized_role():
     except HTTPException as error:
         assert error.status_code == 403
         assert error.detail == "Insufficient permissions"
+
+
+def test_token_expiration():
+    from datetime import timedelta
+    import pytest
+    import jwt
+    from backend.services.auth_service import (
+        create_access_token,
+        decode_access_token,
+    )
+
+    expired_token = create_access_token(
+        user_id="user-expired",
+        username="expired_user",
+        role="verifier",
+        expires_delta=timedelta(seconds=-10),
+    )
+
+    with pytest.raises(jwt.ExpiredSignatureError):
+        decode_access_token(expired_token)
+
+    try:
+        get_current_user(token=expired_token)
+        assert False, "Expected HTTPException for expired token"
+    except HTTPException as error:
+        assert error.status_code == 401
+
+
+def test_demo_user_accounts():
+    from backend.services.auth_service import (
+        get_user_by_username,
+        get_user_by_email,
+        verify_password,
+    )
+
+    demo_users = [
+        ("alice", "alice@qshield.quantum", "signer"),
+        ("bob", "bob@qshield.quantum", "verifier"),
+        ("admin", "admin@qshield.quantum", "admin"),
+        ("eve", "eve@adversary.network", "adversary"),
+    ]
+
+    for username, email, expected_role in demo_users:
+        user_by_name = get_user_by_username(username)
+        assert user_by_name is not None
+        assert user_by_name["role"] == expected_role
+        assert verify_password("qshield123", user_by_name["password_hash"])
+
+        user_by_mail = get_user_by_email(email)
+        assert user_by_mail is not None
+        assert user_by_mail["username"] == username

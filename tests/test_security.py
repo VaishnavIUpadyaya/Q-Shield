@@ -59,4 +59,38 @@ def test_wrong_message_is_rejected():
         expected_message="PAY 100",
         used_nonces=set(),
     ) is False
+
+
+def test_unauthorized_role_impersonation_is_rejected():
+    context = SecurityContext(
+        signer_id="alice",
+        message="PAY 100",
+        nonce="session-001",
+        user_id="demo-eve-004",
+        role="adversary",
+    )
+
+    assert validate_context(
+        signature_context=context,
+        expected_signer="alice",
+        expected_message="PAY 100",
+        used_nonces=set(),
+    ) is False
+
+
+def test_mismatched_user_id_impersonation_is_rejected():
+    context = SecurityContext(
+        signer_id="alice",
+        message="PAY 100",
+        nonce="session-001",
+        user_id="user-mallory",
+        role="signer",
+    )
+
+    assert validate_context(
+        signature_context=context,
+        expected_signer="alice",
+        expected_message="PAY 100",
+        used_nonces=set(),
+    ) is False
     

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 from pydantic import BaseModel, Field
 
@@ -79,3 +79,49 @@ class ExperimentResponse(BaseModel):
 class AttackInfo(BaseModel):
     attack_type: str
     description: str
+
+UserRole = Literal["signer", "verifier", "admin", "adversary"]
+
+
+class UserRegister(BaseModel):
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=50,
+    )
+    email: str = Field(
+        ...,
+        min_length=5,
+        max_length=100,
+    )
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=72,
+    )
+    role: UserRole = "verifier"
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class UserResponse(BaseModel):
+    user_id: str
+    username: str
+    email: str
+    role: UserRole
+
+
+class TokenPayload(BaseModel):
+    user_id: str
+    username: str
+    role: UserRole
+    exp: int
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

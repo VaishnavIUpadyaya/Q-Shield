@@ -22,7 +22,7 @@ from backend.schemas import (
     ExperimentResponse,
     AttackInfo,
 )
-from backend.routers import attacks, experiments, results
+from backend.routers import attacks, experiments, results, auth
 from backend.services.experiment_service import run_experiment
 from backend.services.history_service import (
     save_experiment,
@@ -46,10 +46,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include teammate routers
 app.include_router(attacks.router)
 app.include_router(experiments.router)
 app.include_router(results.router)
+app.include_router(auth.router)
 
 
 class SignRequest(BaseModel):

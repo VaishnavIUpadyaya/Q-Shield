@@ -61,42 +61,10 @@ export const ROLE_ACCENT = {
  * Passwords come from backend/services/auth_service.py DEMO_PASSWORDS.
  */
 export const DEMO_PERSONAS = [
-  {
-    username: "alice",
-    password: "qshield123",
-    role: "signer",
-    displayName: "Alice",
-    tagline: "Quantum Signer",
-    description: "Signs documents using teleportation-based QDS with private Bell-state keys.",
-    icon: "✍️",
-  },
-  {
-    username: "bob",
-    password: "qshield123",
-    role: "verifier",
-    displayName: "Bob",
-    tagline: "Signature Verifier",
-    description: "Verifies quantum signatures via projective measurements and Pauli corrections.",
-    icon: "🔍",
-  },
-  {
-    username: "eve",
-    password: "qshield123",
-    role: "adversary",
-    displayName: "Eve",
-    tagline: "Adversary",
-    description: "Probes the QDS protocol with forgery, replay, and channel manipulation attacks.",
-    icon: "⚡",
-  },
-  {
-    username: "admin",
-    password: "qshield123",
-    role: "admin",
-    displayName: "Admin",
-    tagline: "Security Admin",
-    description: "Monitors threat analytics, detection rates, and system-wide security metrics.",
-    icon: "🛡️",
-  },
+  { username: "alice", password: "qshield123", role: "signer",    displayName: "Alice", tagline: "Quantum Signer",       icon: "✍️" },
+  { username: "bob",   password: "qshield123", role: "verifier",  displayName: "Bob",   tagline: "Signature Verifier",  icon: "🔍" },
+  { username: "eve",   password: "qshield123", role: "adversary", displayName: "Eve",   tagline: "Adversary",           icon: "⚡" },
+  { username: "admin", password: "qshield123", role: "admin",     displayName: "Admin", tagline: "Security Admin",      icon: "🛡️" },
 ];
 
 /**

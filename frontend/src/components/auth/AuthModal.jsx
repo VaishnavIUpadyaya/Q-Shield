@@ -156,7 +156,6 @@ export default function AuthModal() {
                       <span className="persona-icon">{p.icon}</span>
                       <span className="persona-name">{p.displayName}</span>
                       <span className="persona-tagline">{p.tagline}</span>
-                      <p className="persona-desc">{p.description}</p>
                       {isLoading && (
                         <div className="persona-spinner" aria-hidden="true">
                           <div className="spinner-ring" style={{ "--accent-color": accent.color }} />

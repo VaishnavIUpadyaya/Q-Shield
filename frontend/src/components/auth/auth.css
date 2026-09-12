@@ -192,7 +192,7 @@
 
 .persona-card {
   position: relative;
-  padding: 1rem;
+  padding: 0.875rem 1rem;
   border-radius: 0.875rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(15, 20, 32, 0.7);
@@ -200,6 +200,10 @@
   text-align: left;
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s, background 0.2s;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
 }
 
 .persona-card:hover {
@@ -224,8 +228,8 @@
 }
 
 .persona-card .persona-icon {
-  font-size: 1.625rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  line-height: 1;
   display: block;
 }
 
@@ -234,6 +238,7 @@
   font-weight: 700;
   color: #f1f5f9;
   display: block;
+  line-height: 1.2;
 }
 
 .persona-card .persona-tagline {
@@ -243,14 +248,7 @@
   letter-spacing: 0.06em;
   color: var(--accent-color);
   display: block;
-  margin-top: 0.125rem;
-}
-
-.persona-card .persona-desc {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin-top: 0.5rem;
-  line-height: 1.5;
+  line-height: 1.2;
 }
 
 /* Loading spinner inside card */

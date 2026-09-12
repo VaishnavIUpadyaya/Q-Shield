@@ -1,16 +1,23 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Shield } from "lucide-react";
+import { Shield, Eye, EyeOff, Zap, UserPlus, LogIn } from "lucide-react";
 import { useAuth, AuthError } from "@/hooks/useAuth";
 import { DEMO_PERSONAS, ROLE_ACCENT } from "@/config/roles";
 import "./auth.css";
 
 const TABS = [
-  { id: "demo",     label: "Demo Personas" },
-  { id: "signin",   label: "Sign In" },
-  { id: "register", label: "Create Account" },
+  { id: "demo",     label: "Instant Demo",   icon: Zap },
+  { id: "signin",   label: "Sign In",         icon: LogIn },
+  { id: "register", label: "Register",        icon: UserPlus },
 ];
+
+const PERSONA_SCOPE = {
+  signer:    ["Document Signing", "Simulation Studio", "Batch Runner", "Logs"],
+  verifier:  ["Signature Verification", "Experiment Logs"],
+  adversary: ["Attack Lab", "Experiment Logs"],
+  admin:     ["Threat Analytics", "All Views", "Full Access"],
+};
 
 export default function AuthModal() {
   const { login, register } = useAuth();
@@ -19,6 +26,8 @@ export default function AuthModal() {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const firstFocusRef = useRef(null);
 
   useEffect(() => { firstFocusRef.current?.focus(); }, [tab]);
@@ -75,9 +84,12 @@ export default function AuthModal() {
     <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="Q-Shield Authentication">
       <div className="auth-modal">
 
-        {/* ── Header — matches dashboard branding exactly ── */}
+        {/* Ambient glow orbs */}
+        <div className="auth-orb auth-orb-cyan" aria-hidden="true" />
+        <div className="auth-orb auth-orb-purple" aria-hidden="true" />
+
+        {/* Header */}
         <div className="auth-header">
-          {/* Shield icon — same gradient border as Navbar */}
           <div className="auth-logo-wrap">
             <div className="auth-logo-ring">
               <div className="auth-logo-inner">
@@ -86,7 +98,6 @@ export default function AuthModal() {
             </div>
             <div className="auth-logo-pulse" />
           </div>
-
           <div>
             <div className="auth-brand-row">
               <span className="auth-brand-name">Q-SHIELD</span>
@@ -96,48 +107,54 @@ export default function AuthModal() {
           </div>
         </div>
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div className="auth-tabs" role="tablist">
-          {TABS.map((t, i) => (
-            <button
-              key={t.id}
-              role="tab"
-              aria-selected={tab === t.id}
-              className={`auth-tab${tab === t.id ? " active" : ""}`}
-              onClick={() => { setTab(t.id); clearMessages(); }}
-              ref={i === 0 ? firstFocusRef : null}
-            >
-              {t.label}
-            </button>
-          ))}
+          {TABS.map((t, i) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
+                className={`auth-tab${tab === t.id ? " active" : ""}`}
+                onClick={() => { setTab(t.id); clearMessages(); }}
+                ref={i === 0 ? firstFocusRef : null}
+              >
+                <Icon className="auth-tab-icon" />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div className="auth-body">
           {error && (
-            <div className={`auth-error ${error.kind}`} role="alert" style={{ marginBottom: "1rem" }}>
-              {error.kind === "network" && "⚠️ "}
-              {error.kind === "server"  && "🔴 "}
-              {error.kind === "credentials" && "🔒 "}
+            <div className={`auth-error ${error.kind}`} role="alert">
+              <span className="auth-msg-icon">
+                {error.kind === "network" ? "⚠️" : error.kind === "server" ? "🔴" : "🔒"}
+              </span>
               {error.msg}
             </div>
           )}
           {success && (
-            <div className="auth-success" role="status" style={{ marginBottom: "1rem" }}>
-              ✅ {success}
+            <div className="auth-success" role="status">
+              <span className="auth-msg-icon">✅</span>
+              {success}
             </div>
           )}
 
-          {/* ── Demo Personas ── */}
+          {/* Demo Personas */}
           {tab === "demo" && (
             <div>
               <p className="auth-personas-hint">
-                One-click login as a demo persona. Each has a distinct role and access scope.
+                One-click login as a demo persona. Each role unlocks a distinct set of views.
               </p>
               <div className="persona-grid">
                 {DEMO_PERSONAS.map((p) => {
                   const accent = ROLE_ACCENT[p.role];
                   const isLoading = loadingCard === p.username;
+                  const scope = PERSONA_SCOPE[p.role] ?? [];
                   return (
                     <button
                       key={p.username}
@@ -153,9 +170,34 @@ export default function AuthModal() {
                       aria-label={`Log in as ${p.displayName} (${accent.label})`}
                       aria-busy={isLoading}
                     >
-                      <span className="persona-icon">{p.icon}</span>
-                      <span className="persona-name">{p.displayName}</span>
-                      <span className="persona-tagline">{p.tagline}</span>
+                      <span className="persona-border-sweep" aria-hidden="true" />
+
+                      <div className="persona-top">
+                        <span className="persona-icon-wrap" style={{ background: accent.bg, border: `1px solid ${accent.border}` }}>
+                          <span className="persona-icon">{p.icon}</span>
+                        </span>
+                        <div className="persona-header-text">
+                          <span className="persona-name">{p.displayName}</span>
+                          <span className="persona-role-badge" style={{ color: accent.color, background: accent.bg, border: `1px solid ${accent.border}` }}>
+                            {accent.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="persona-tagline">{p.tagline}</p>
+
+                      <div className="persona-scope">
+                        {scope.map((s) => (
+                          <span key={s} className="persona-scope-tag" style={{ color: accent.color, background: accent.bg }}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="persona-cta" style={{ color: accent.color }}>
+                        {isLoading ? "Authenticating…" : "Enter as " + p.displayName + " →"}
+                      </div>
+
                       {isLoading && (
                         <div className="persona-spinner" aria-hidden="true">
                           <div className="spinner-ring" style={{ "--accent-color": accent.color }} />
@@ -168,7 +210,7 @@ export default function AuthModal() {
             </div>
           )}
 
-          {/* ── Sign In ── */}
+          {/* Sign In */}
           {tab === "signin" && (
             <form className="auth-form" onSubmit={handleSignIn} noValidate>
               <div className="auth-field">
@@ -178,21 +220,26 @@ export default function AuthModal() {
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="si-password">Password</label>
-                <input id="si-password" name="password" className="auth-input" type="password"
-                  autoComplete="current-password" required placeholder="••••••••" />
+                <div className="auth-input-wrap">
+                  <input id="si-password" name="password" className="auth-input" type={showPw ? "text" : "password"}
+                    autoComplete="current-password" required placeholder="••••••••" />
+                  <button type="button" className="auth-eye" onClick={() => setShowPw(v => !v)} aria-label="Toggle password">
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               <button className="auth-submit" type="submit" disabled={formLoading}>
-                {formLoading ? "Signing in…" : "Sign In"}
+                {formLoading ? <><span className="btn-spinner" />Signing in…</> : "Sign In"}
               </button>
+              <p className="auth-switch-hint">
+                No account? <button type="button" className="auth-link" onClick={() => { setTab("register"); clearMessages(); }}>Create one</button>
+              </p>
             </form>
           )}
 
-          {/* ── Create Account ── */}
+          {/* Create Account */}
           {tab === "register" && (
             <form className="auth-form" onSubmit={handleRegister} noValidate>
-              <div className="auth-error server" style={{ marginBottom: "0.25rem" }}>
-                ⚠️ Registration requires Firestore. For this demo, use the <strong>Demo Personas</strong> tab.
-              </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-username">Username</label>
                 <input id="reg-username" name="username" className="auth-input" type="text"
@@ -205,8 +252,13 @@ export default function AuthModal() {
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-password">Password</label>
-                <input id="reg-password" name="password" className="auth-input" type="password"
-                  autoComplete="new-password" required minLength={8} maxLength={72} />
+                <div className="auth-input-wrap">
+                  <input id="reg-password" name="password" className="auth-input" type={showConfirm ? "text" : "password"}
+                    autoComplete="new-password" required minLength={8} maxLength={72} />
+                  <button type="button" className="auth-eye" onClick={() => setShowConfirm(v => !v)} aria-label="Toggle password">
+                    {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-confirm">Confirm Password</label>
@@ -214,10 +266,13 @@ export default function AuthModal() {
                   autoComplete="new-password" required />
               </div>
               <button className="auth-submit" type="submit" disabled={formLoading}>
-                {formLoading ? "Creating account…" : "Create Account"}
+                {formLoading ? <><span className="btn-spinner" />Creating account…</> : "Create Account"}
               </button>
               <p className="auth-note">
                 Public accounts are created with the <strong>Verifier</strong> role only.
+              </p>
+              <p className="auth-switch-hint">
+                Already have an account? <button type="button" className="auth-link" onClick={() => { setTab("signin"); clearMessages(); }}>Sign in</button>
               </p>
             </form>
           )}

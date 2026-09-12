@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { Shield } from "lucide-react";
 import { useAuth, AuthError } from "@/hooks/useAuth";
 import { DEMO_PERSONAS, ROLE_ACCENT } from "@/config/roles";
 import "./auth.css";
@@ -14,17 +15,13 @@ const TABS = [
 export default function AuthModal() {
   const { login, register } = useAuth();
   const [tab, setTab] = useState("demo");
-  const [loadingCard, setLoadingCard] = useState(null); // persona username
+  const [loadingCard, setLoadingCard] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState(null);   // {msg, kind}
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const firstFocusRef = useRef(null);
 
-  // Trap focus inside modal; close on Escape is handled by parent (no dismiss here —
-  // the modal is the auth gate and cannot be dismissed without logging in).
-  useEffect(() => {
-    firstFocusRef.current?.focus();
-  }, [tab]);
+  useEffect(() => { firstFocusRef.current?.focus(); }, [tab]);
 
   function clearMessages() { setError(null); setSuccess(null); }
 
@@ -33,7 +30,6 @@ export default function AuthModal() {
     setLoadingCard(persona.username);
     try {
       await login(persona.username, persona.password);
-      // AuthProvider sets user; page.jsx will unmount this modal.
     } catch (e) {
       setError({ msg: e.message, kind: e instanceof AuthError ? e.kind : "network" });
       setLoadingCard(null);
@@ -78,22 +74,29 @@ export default function AuthModal() {
   return (
     <div className="auth-overlay" role="dialog" aria-modal="true" aria-label="Q-Shield Authentication">
       <div className="auth-modal">
-        {/* Header */}
-        <div style={{ padding: "1.5rem 1.75rem 0" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-            <span style={{ fontSize: "1.5rem" }}>🛡️</span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "1.125rem", color: "#f1f5f9", fontFamily: "'Space Grotesk', sans-serif" }}>
-                Q-SHIELD
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "#64748b" }}>
-                Quantum Digital Signature Framework
+
+        {/* ── Header — matches dashboard branding exactly ── */}
+        <div className="auth-header">
+          {/* Shield icon — same gradient border as Navbar */}
+          <div className="auth-logo-wrap">
+            <div className="auth-logo-ring">
+              <div className="auth-logo-inner">
+                <Shield className="auth-logo-icon" />
               </div>
             </div>
+            <div className="auth-logo-pulse" />
+          </div>
+
+          <div>
+            <div className="auth-brand-row">
+              <span className="auth-brand-name">Q-SHIELD</span>
+              <span className="auth-brand-badge">SIH26141</span>
+            </div>
+            <p className="auth-brand-sub">Quantum Digital Signature Framework</p>
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* ── Tabs ── */}
         <div className="auth-tabs" role="tablist">
           {TABS.map((t, i) => (
             <button
@@ -109,7 +112,7 @@ export default function AuthModal() {
           ))}
         </div>
 
-        {/* Body */}
+        {/* ── Body ── */}
         <div className="auth-body">
           {error && (
             <div className={`auth-error ${error.kind}`} role="alert" style={{ marginBottom: "1rem" }}>
@@ -128,7 +131,7 @@ export default function AuthModal() {
           {/* ── Demo Personas ── */}
           {tab === "demo" && (
             <div>
-              <p style={{ fontSize: "0.8125rem", color: "#64748b", marginBottom: "1rem" }}>
+              <p className="auth-personas-hint">
                 One-click login as a demo persona. Each has a distinct role and access scope.
               </p>
               <div className="persona-grid">
@@ -171,28 +174,13 @@ export default function AuthModal() {
             <form className="auth-form" onSubmit={handleSignIn} noValidate>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="si-username">Username</label>
-                <input
-                  id="si-username"
-                  name="username"
-                  className="auth-input"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  placeholder="e.g. alice"
-                  ref={firstFocusRef}
-                />
+                <input id="si-username" name="username" className="auth-input" type="text"
+                  autoComplete="username" required placeholder="e.g. alice" ref={firstFocusRef} />
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="si-password">Password</label>
-                <input
-                  id="si-password"
-                  name="password"
-                  className="auth-input"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  placeholder="••••••••"
-                />
+                <input id="si-password" name="password" className="auth-input" type="password"
+                  autoComplete="current-password" required placeholder="••••••••" />
               </div>
               <button className="auth-submit" type="submit" disabled={formLoading}>
                 {formLoading ? "Signing in…" : "Sign In"}
@@ -205,52 +193,23 @@ export default function AuthModal() {
             <form className="auth-form" onSubmit={handleRegister} noValidate>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-username">Username</label>
-                <input
-                  id="reg-username"
-                  name="username"
-                  className="auth-input"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  minLength={3}
-                  maxLength={50}
-                  ref={firstFocusRef}
-                />
+                <input id="reg-username" name="username" className="auth-input" type="text"
+                  autoComplete="username" required minLength={3} maxLength={50} ref={firstFocusRef} />
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-email">Email</label>
-                <input
-                  id="reg-email"
-                  name="email"
-                  className="auth-input"
-                  type="email"
-                  autoComplete="email"
-                  required
-                />
+                <input id="reg-email" name="email" className="auth-input" type="email"
+                  autoComplete="email" required />
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-password">Password</label>
-                <input
-                  id="reg-password"
-                  name="password"
-                  className="auth-input"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  minLength={8}
-                  maxLength={72}
-                />
+                <input id="reg-password" name="password" className="auth-input" type="password"
+                  autoComplete="new-password" required minLength={8} maxLength={72} />
               </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-confirm">Confirm Password</label>
-                <input
-                  id="reg-confirm"
-                  name="confirm"
-                  className="auth-input"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                />
+                <input id="reg-confirm" name="confirm" className="auth-input" type="password"
+                  autoComplete="new-password" required />
               </div>
               <button className="auth-submit" type="submit" disabled={formLoading}>
                 {formLoading ? "Creating account…" : "Create Account"}

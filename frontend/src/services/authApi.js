@@ -87,12 +87,24 @@ export async function apiLogin(username, password) {
 }
 
 export async function apiRegister(username, email, password) {
-  return authFetch("/auth/register", {
-    method: "POST",
-    // Public registration is locked to "verifier" by the backend.
-    body: JSON.stringify({ username, email, password, role: "verifier" }),
-  });
-  // Returns: {user_id, username, email, role}
+  // NOTE: /auth/register calls Firestore (create_user in auth_service.py).
+  // Without GOOGLE_APPLICATION_CREDENTIALS configured, the backend crashes
+  // the request before sending any HTTP response, so fetch() throws a network
+  // error. We catch that specific case and surface a clear message.
+  try {
+    return await authFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ username, email, password, role: "verifier" }),
+    });
+  } catch (e) {
+    if (e.kind === "network") {
+      throw new AuthError(
+        "Registration requires Firebase/Firestore to be configured on the backend. Use a Demo Persona to log in instead.",
+        "server"
+      );
+    }
+    throw e;
+  }
 }
 
 export async function apiGetMe(token) {

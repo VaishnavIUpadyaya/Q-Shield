@@ -190,6 +190,9 @@ export default function AuthModal() {
           {/* ── Create Account ── */}
           {tab === "register" && (
             <form className="auth-form" onSubmit={handleRegister} noValidate>
+              <div className="auth-error server" style={{ marginBottom: "0.25rem" }}>
+                ⚠️ Registration requires Firestore. For this demo, use the <strong>Demo Personas</strong> tab.
+              </div>
               <div className="auth-field">
                 <label className="auth-label" htmlFor="reg-username">Username</label>
                 <input id="reg-username" name="username" className="auth-input" type="text"

@@ -2,15 +2,27 @@
 
 import React from "react";
 import { Shield, ShieldAlert, Cpu, Activity, Database, FlaskConical, BarChart3, History, Sparkles } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { canAccess, ROLE_ACCENT } from "@/config/roles";
+import UserBadge from "@/components/layout/UserBadge";
 
 export default function Navbar({ activeTab, setActiveTab, backendStatus, onQuickRun }) {
-  const navItems = [
-    { id: "overview", label: "Dashboard", icon: BarChart3 },
-    { id: "simulation", label: "Simulation Studio", icon: Cpu },
-    { id: "batch", label: "Batch Benchmarks", icon: FlaskConical },
-    { id: "threats", label: "Threat Analytics", icon: ShieldAlert },
-    { id: "history", label: "Experiment Logs", icon: History },
+  const { user } = useAuth();
+
+  const allNavItems = [
+    { id: "overview",   label: "Dashboard",         icon: BarChart3 },
+    { id: "simulation", label: "Simulation Studio",  icon: Cpu },
+    { id: "batch",      label: "Batch Benchmarks",   icon: FlaskConical },
+    { id: "threats",    label: "Threat Analytics",   icon: ShieldAlert },
+    { id: "history",    label: "Experiment Logs",    icon: History },
   ];
+
+  // Filter tabs to those the current role may access
+  const navItems = user
+    ? allNavItems.filter((item) => canAccess(user.role, item.id))
+    : allNavItems;
+
+  const accent = user ? ROLE_ACCENT[user.role] : null;
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-white/[0.08] bg-obsidian-950/80 backdrop-blur-2xl">
@@ -47,7 +59,7 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus, onQuick
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
-                <button
+                  <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex items-center space-x-2.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
@@ -55,15 +67,16 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus, onQuick
                       ? "bg-gradient-to-r from-cyan-500/20 to-purple-500/20 text-white border border-cyan-500/40 shadow-sm shadow-cyan-500/20"
                       : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent"
                   }`}
+                  style={isActive && accent ? { borderColor: accent.border, boxShadow: `0 0 12px -2px ${accent.glow}` } : {}}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? "text-quantum-cyan" : "text-slate-400"}`} />
+                  <Icon className={`w-4 h-4`} style={{ color: isActive && accent ? accent.color : undefined }} />
                   <span>{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Backend Status & Fast Action */}
+          {/* Backend Status, UserBadge & Fast Action */}
           <div className="flex items-center space-x-4">
             {/* Status indicator */}
             <div className="flex items-center space-x-2.5 px-4 py-2 rounded-xl bg-obsidian-900/90 border border-white/[0.08] text-sm">
@@ -72,6 +85,9 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus, onQuick
                 {backendStatus.online ? "QISKIT AER LIVE" : "OFFLINE ENGINE"}
               </span>
             </div>
+
+            {/* Identity badge */}
+            {user && <UserBadge />}
 
             {/* Quick Demo Run */}
             <button

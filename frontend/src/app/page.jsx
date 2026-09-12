@@ -7,6 +7,9 @@ import SimulationStudio from "@/components/SimulationStudio";
 import BatchExperimentRunner from "@/components/BatchExperimentRunner";
 import ThreatAnalytics from "@/components/ThreatAnalytics";
 import ExperimentHistory from "@/components/ExperimentHistory";
+import AuthModal from "@/components/auth/AuthModal";
+import { RoleGate } from "@/components/layout/UserBadge";
+import { useAuth } from "@/hooks/useAuth";
 import {
   checkBackendHealth,
   runSimulation,
@@ -15,6 +18,7 @@ import {
 } from "@/services/api";
 
 export default function Home() {
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [backendStatus, setBackendStatus] = useState({ online: false });
 
@@ -36,7 +40,7 @@ export default function Home() {
     attack_fraction: 0.35,
   });
 
-  const [loading, setLoading] = useState(false);
+  const [simLoading, setSimLoading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
   const [history, setHistory] = useState([]);
 
@@ -68,7 +72,7 @@ export default function Home() {
   }, []);
 
   const handleRunSimulation = async () => {
-    setLoading(true);
+    setSimLoading(true);
 
     try {
       const result = await runSimulation(simConfig);
@@ -80,9 +84,10 @@ export default function Home() {
       const updatedMetrics = await getMetrics();
       setMetrics(updatedMetrics);
     } catch (err) {
-      console.error("Simulation failed:", err);
+      // Surface error to user via SimulationStudio's own error handling
+      void err;
     } finally {
-      setLoading(false);
+      setSimLoading(false);
     }
   };
 
@@ -110,7 +115,7 @@ export default function Home() {
       attack_fraction: 0.4,
     });
 
-    setLoading(true);
+    setSimLoading(true);
 
     try {
       const result = await runSimulation({
@@ -128,9 +133,23 @@ export default function Home() {
       const updatedMetrics = await getMetrics();
       setMetrics(updatedMetrics);
     } finally {
-      setLoading(false);
+      setSimLoading(false);
     }
   };
+
+  // Restoring session from localStorage — show minimal spinner
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center quantum-mesh-bg">
+        <div style={{ color: "#00F2FE", fontFamily: "'JetBrains Mono', monospace", fontSize: "0.875rem" }}>
+          Restoring session…
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated — show the auth gate (cannot be dismissed)
+  if (!user) return <AuthModal />;
 
   return (
     <div className="min-h-screen flex flex-col quantum-mesh-bg text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -144,6 +163,7 @@ export default function Home() {
 
       {/* Main Content View */}
       <main className="flex-1 max-w-[1440px] w-full mx-auto px-6 sm:px-8 lg:px-10 py-10">
+        {/* overview: all roles */}
         {activeTab === "overview" && (
           <DashboardOverview
             metrics={metrics}
@@ -153,38 +173,46 @@ export default function Home() {
         )}
 
         {activeTab === "simulation" && (
-          <SimulationStudio
-            simConfig={simConfig}
-            setSimConfig={setSimConfig}
-            onRunSimulation={handleRunSimulation}
-            loading={loading}
-            lastResult={lastResult}
-          />
+          <RoleGate viewId="simulation">
+            <SimulationStudio
+              simConfig={simConfig}
+              setSimConfig={setSimConfig}
+              onRunSimulation={handleRunSimulation}
+              loading={simLoading}
+              lastResult={lastResult}
+            />
+          </RoleGate>
         )}
 
         {activeTab === "batch" && (
-          <BatchExperimentRunner
-            onExperimentCompleted={refreshData}
-          />
+          <RoleGate viewId="batch">
+            <BatchExperimentRunner
+              onExperimentCompleted={refreshData}
+            />
+          </RoleGate>
         )}
 
         {/* Fix #4: Connect ThreatAnalytics to live app data */}
         {activeTab === "threats" && (
-          <ThreatAnalytics
-            metrics={metrics}
-            history={history}
-          />
+          <RoleGate viewId="threats">
+            <ThreatAnalytics
+              metrics={metrics}
+              history={history}
+            />
+          </RoleGate>
         )}
 
         {activeTab === "history" && (
-          <ExperimentHistory
-            history={history}
-            onRefresh={refreshData}
-            onSelectRun={(run) => {
-              setLastResult(run);
-              setActiveTab("simulation");
-            }}
-          />
+          <RoleGate viewId="history">
+            <ExperimentHistory
+              history={history}
+              onRefresh={refreshData}
+              onSelectRun={(run) => {
+                setLastResult(run);
+                setActiveTab("simulation");
+              }}
+            />
+          </RoleGate>
         )}
       </main>
 

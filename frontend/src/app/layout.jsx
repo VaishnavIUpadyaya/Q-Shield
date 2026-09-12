@@ -1,4 +1,5 @@
 import "./globals.css";
+import { AuthProvider } from "@/hooks/useAuth";
 
 export const metadata = {
   title: "Q-SHIELD · Quantum Cyber Threat Detection Framework",
@@ -9,7 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="dark">
       <body className="bg-[#05070f] text-slate-100 min-h-screen antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

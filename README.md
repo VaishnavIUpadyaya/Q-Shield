@@ -18,11 +18,13 @@ A quantum-inspired cybersecurity framework for detecting attacks against telepor
 - [Security Metrics](#security-metrics)
 - [Repeated Experiments](#repeated-experiments)
 - [Interactive Prototype](#interactive-prototype)
+- [Authentication](#authentication)
 - [Technology Stack](#technology-stack)
 - [Why No AI/ML?](#why-no-aiml)
 - [Dataset](#dataset)
 - [Expected Deliverables](#expected-deliverables)
 - [Key Principles](#key-principles)
+- [Known Limitations](#known-limitations)
 - [Disclaimer](#disclaimer)
 
 ---
@@ -309,7 +311,51 @@ The framework will also aim to show *why* a detection decision was made — e.g.
 - Cloud deployment for the Python backend
 - Firebase (storage)
 
-Authentication is not a current priority for this prototype and is out of scope for this README.
+Authentication is implemented. See the [Authentication](#authentication) section below.
+
+---
+
+## Authentication
+
+The application is fully gated behind authentication. Every session is bound to a verified identity and role before any cryptographic operation is permitted.
+
+### Demo Accounts
+
+Four accounts are pre-seeded in memory and work without any database configuration:
+
+| Username | Role | Password |
+|---|---|---|
+| `alice` | Signer | `qshield123` |
+| `bob` | Verifier | `qshield123` |
+| `admin` | Admin | `qshield123` |
+| `eve` | Adversary | `qshield123` |
+
+### Login Interface
+
+Opening `http://localhost:3000` shows an authentication modal with three tabs:
+
+- **Demo Personas** — one-click login cards for each of the four accounts above. This is the fastest way to start a demo.
+- **Sign In** — standard username and password form.
+- **Create Account** — registers a new Verifier account. Requires Firestore to be configured (see [Known Limitations](#known-limitations)).
+
+### Role-Based View Access
+
+Each role sees only the tabs relevant to their function:
+
+| Role | Views accessible |
+|---|---|
+| Signer (Alice) | Dashboard, Simulation Studio, Batch Benchmarks, Experiment Logs |
+| Verifier (Bob) | Dashboard, Experiment Logs |
+| Admin | Dashboard, Batch Benchmarks, Threat Analytics, Experiment Logs |
+| Adversary (Eve) | Dashboard, Experiment Logs |
+
+The active user's name, role, and a session identifier are shown in the navbar. Clicking the badge opens a dropdown with full session details and a sign-out button.
+
+### Session Behaviour
+
+- JWT is stored in `localStorage` and re-validated against the backend on every page refresh.
+- Session expires automatically after 60 minutes.
+- Signing out in one browser tab signs out all other open tabs immediately.
 
 ---
 
@@ -351,6 +397,9 @@ We do not currently have access to an official SIH26141 dataset, and this README
 - Measurement visualization
 - Security analysis with explanation of detection decisions
 - Experiment history
+- JWT-based authentication with role-based access control
+- Glassmorphic login interface with one-click demo persona selection
+- Role-filtered navigation and active session identity badge
 
 ---
 
@@ -360,12 +409,23 @@ We do not currently have access to an official SIH26141 dataset, and this README
 - **Explainable** — detection decisions are reported along with the reasoning behind them.
 - **Experiment-driven** — performance claims come from repeated simulations, not single demonstrations.
 - **Protocol-grounded** — detection logic is tied to the specific QDS protocol being simulated, not treated as one-size-fits-all.
+- **Identity-bound** — every cryptographic operation is bound to a verified user identity and role.
+
+---
+
+## Known Limitations
+
+- **Create Account requires Firestore.** Registering a new user writes to Firestore via `create_user()`. Without `GOOGLE_APPLICATION_CREDENTIALS` configured, the request fails. The four demo accounts are hardcoded in memory and always work without Firestore.
+- **Key fingerprint in the navbar is cosmetic.** The session identifier shown in the identity badge is derived client-side from the user ID and username. It is not real QDS key material. The backend does not currently return a public key field.
+- **Client-side role gating is UX only.** The filtered navigation tabs are a convenience feature. The backend enforces real access control on every API call.
 
 ---
 
 ## Getting Started & Running Locally
 
 ### 1. Environment & Firebase Credentials
+
+Firebase is optional for running the demo — the four pre-seeded accounts work without it. To enable new user registration and Firestore persistence:
 
 1. Place your Firebase service account JSON key in:
    ```
@@ -376,29 +436,47 @@ We do not currently have access to an official SIH26141 dataset, and this README
    GOOGLE_APPLICATION_CREDENTIALS=firebase/serviceAccountKey.json
    ```
 
-### 2. Run Backend Server (FastAPI + Qiskit Aer)
+### 2. Install Python Dependencies
 
 ```bash
-# Using uv or virtual environment:
-uv run uvicorn backend.main:app --reload --port 8000
+pip install -r requirements.txt
+```
+
+### 3. Run Backend Server (FastAPI + Qiskit Aer)
+
+```bash
+python run_backend.py
 ```
 Backend will be live at `http://127.0.0.1:8000` with interactive API docs at `http://127.0.0.1:8000/docs`.
 
-### 3. Run Frontend Dashboard (Next.js + Tailwind CSS)
+### 4. Run Frontend Dashboard (Next.js + Tailwind CSS)
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open `http://localhost:3000` in your browser to interact with the Q-SHIELD Quantum Threat Detection Studio.
+Open `http://localhost:3000`. The authentication modal appears — click any Demo Persona card to log in instantly.
 
-### 4. Run Automated Test Suite
+### 5. Run Automated Test Suite
 
 ```bash
-uv run pytest
+pytest
 ```
-Executes all 88 unit and integration tests.
+
+To run only the authentication tests:
+
+```bash
+pytest tests/test_auth.py -v
+```
+
+### 6. Frontend Environment Variable (optional)
+
+Copy `frontend/.env.example` to `frontend/.env.local` if your backend runs on a different port:
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+```
 
 ---
 

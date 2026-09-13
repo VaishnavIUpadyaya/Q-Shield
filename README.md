@@ -4,6 +4,7 @@
 
 A quantum-inspired cybersecurity framework for detecting attacks against teleportation-based Quantum Digital Signature (QDS) protocols, using quantum measurements and statistical analysis — without Artificial Intelligence or Machine Learning.
 
+---
 
 ## Table of Contents
 
@@ -17,12 +18,16 @@ A quantum-inspired cybersecurity framework for detecting attacks against telepor
   - [4. Statistical Threat Detection](#4-statistical-threat-detection)
 - [Security Metrics](#security-metrics)
 - [Repeated Experiments](#repeated-experiments)
-- [Interactive Prototype](#interactive-prototype)
+- [Authentication System](#authentication-system)
+- [Frontend Interface](#frontend-interface)
+- [Getting Started & Running Locally](#getting-started--running-locally)
 - [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
 - [Why No AI/ML?](#why-no-aiml)
 - [Dataset](#dataset)
 - [Expected Deliverables](#expected-deliverables)
 - [Key Principles](#key-principles)
+- [Known Limitations](#known-limitations)
 - [Disclaimer](#disclaimer)
 
 ---
@@ -114,7 +119,7 @@ This is intended as a working research prototype, not a static demo with pre-set
 
 ### 1. Quantum Signature Protocol
 
-The framework will simulate a teleportation-based QDS protocol, including:
+The framework simulates a teleportation-based QDS protocol, including:
 
 - Bell-state entanglement
 - Quantum teleportation
@@ -127,30 +132,23 @@ A legitimate signature run is used to establish the expected measurement behavio
 
 ### 2. Attack Scenarios
 
-The framework is designed to address five threat scenarios. Not all of them are detected the same way — each has a different relationship to quantum measurement data.
+The framework addresses five threat scenarios. Each has a different relationship to quantum measurement data.
 
-**Forgery Attack**
-An attacker attempts to create or modify a valid signature.
+**Forgery Attack** — An attacker attempts to create or modify a valid signature.
 
 ```
 Legitimate:  Signer   ──> Verifier   (valid signature)
 Forgery:     Attacker ──> Verifier   (fake / modified signature)
 ```
 
-A forged signature is expected to produce measurement statistics that deviate from the legitimate baseline. The detector will compare observed statistics against this baseline to flag likely forgeries.
-
-**Impersonation**
-An attacker attempts to act as the legitimate signer.
+**Impersonation** — An attacker attempts to act as the legitimate signer.
 
 ```
 Signer   ──> Verifier   (legitimate)
 Attacker ──> Verifier   (pretending to be signer)
 ```
 
-Detection here depends on the verification conditions defined by the specific QDS protocol being simulated (e.g. whether the attacker can reproduce the expected correlations between signer and verifier). This will be evaluated against the chosen protocol's verification rules, not treated as a generic measurement anomaly.
-
-**Replay Attack**
-An attacker captures a previously valid signature and attempts to reuse it.
+**Replay Attack** — An attacker captures a previously valid signature and attempts to reuse it.
 
 ```
 Signer ──> Verifier
@@ -160,19 +158,13 @@ Signer ──> Verifier
 Attacker ──> Verifier   (reuses old signature)
 ```
 
-Detecting a replay is not purely a measurement-statistics problem — it typically requires message or session freshness information (e.g. sequence numbers, timestamps, or one-time session data) in addition to measurement analysis. The framework will incorporate freshness checks alongside statistical comparison.
+**Unauthorized Verification** — An unauthorized entity attempts to perform or access verification operations. Handled by recording and evaluating verification attempts against defined protocol rules.
 
-**Unauthorized Verification**
-An unauthorized entity attempts to perform or access verification operations. This is primarily an access-control concern rather than a quantum-measurement anomaly, and will be handled by recording and evaluating verification attempts against defined protocol rules, in addition to any relevant measurement checks.
-
-**Quantum Channel Manipulation**
-An attacker interferes with the quantum state while it is in transit.
+**Quantum Channel Manipulation** — An attacker interferes with the quantum state while it is in transit.
 
 ```
 Signer ──> Attacker (modifies state) ──> Verifier
 ```
-
-Channel manipulation can alter the resulting measurement distribution, so this scenario is the closest fit to pure statistical detection from measurement outcomes.
 
 ### 3. Quantum Measurement Analysis
 
@@ -210,29 +202,27 @@ Expected (legitimate) measurement distribution
         Detection decision
 ```
 
-Detection thresholds will be derived from the selected QDS protocol and the statistical model used for comparison (for example, a chi-squared test or a confidence-interval-based bound), rather than fixed arbitrary numbers. The exact method will be finalized as the detector is implemented.
+Detection thresholds are derived from the selected QDS protocol and the statistical model used for comparison (chi-squared test or confidence-interval-based bound), rather than fixed arbitrary numbers.
 
 ---
 
 ## Security Metrics
 
-The framework will evaluate detection performance using the following metrics, calculated from repeated experiments:
-
 | Metric | Definition |
 |---|---|
-| **Detection Rate** | Fraction of actual attacks correctly flagged as attacks |
+| **Detection Rate** | Fraction of actual attacks correctly flagged |
 | **False Accept Rate** | Fraction of malicious attempts incorrectly accepted as legitimate |
 | **False Reject Rate** | Fraction of legitimate signatures incorrectly rejected |
-| **Verification Accuracy** | Fraction of all signatures (legitimate and malicious) correctly classified |
-| **Forgery Probability** | Estimated probability that a forged signature passes verification, under the tested conditions |
+| **Verification Accuracy** | Fraction of all signatures correctly classified |
+| **Forgery Probability** | Estimated probability that a forged signature passes verification |
 
-These values are outputs of running many simulated experiments — they are not fixed or assumed in advance.
+These values are outputs of running many simulated experiments — not fixed or assumed in advance.
 
 ---
 
 ## Repeated Experiments
 
-A single simulation run is not sufficient to make a security claim. The framework will run each scenario many times to build up a statistical picture. For example, a configuration might look like:
+A single simulation run is not sufficient to make a security claim. The framework runs each scenario many times to build up a statistical picture. For example:
 
 ```
 Attack type: Forgery
@@ -240,60 +230,220 @@ Shots per experiment: 5,000
 Number of trials: 100
 ```
 
-*(These numbers are illustrative only — actual values will depend on the protocol and what is computationally practical.)*
-
-Across all trials, the framework will compute the security metrics listed above. This lets us describe detector performance statistically, rather than relying on a single demonstration run.
+Across all trials, the framework computes the security metrics listed above.
 
 ---
 
-## Interactive Prototype
+## Authentication System
 
-This is intended to be an **interactive testing tool**, not a static page showing fixed results.
+**Issue-1 — Backend Authentication (FastAPI + JWT)**
 
-Planned user-configurable parameters include:
+The backend implements a complete authentication system that binds every cryptographic operation to a verified identity.
 
-- QDS protocol / scenario selection
-- Attack type
-- Number of qubits
-- Number of measurement shots
-- Number of trials
-- Measurement basis
-- Attack-specific parameters (where applicable)
+### Endpoints
 
-Changing a configuration should trigger an actual quantum simulation and a fresh statistical analysis — not a lookup of a pre-computed result.
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/auth/login` | Authenticate with `{username, password}` → returns JWT + user object |
+| `POST` | `/auth/register` | Register a new account (verifier role only) |
+| `GET` | `/auth/me` | Return the currently authenticated user (requires Bearer token) |
+
+### JWT Token
+
+- Algorithm: `HS256`
+- Expiry: 60 minutes (configurable via `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`)
+- Claims: `user_id`, `username`, `role`, `iat`, `exp`
+- Secret: set via `JWT_SECRET_KEY` environment variable
+
+### Password Security
+
+Passwords are hashed with **bcrypt** and never stored in plain text. Verification uses `bcrypt.checkpw`.
+
+### Role-Based Access Control
+
+Four roles are enforced at the backend level via the `require_roles()` dependency:
+
+| Role | Identity | Access |
+|---|---|---|
+| `signer` | Alice | Simulation Studio, Batch Benchmarks |
+| `verifier` | Bob | Experiment Logs |
+| `admin` | Security Admin | Threat Analytics, Batch Benchmarks |
+| `adversary` | Eve | Attack Lab (Issue-5) |
+
+### Demo Accounts
+
+Pre-seeded in memory — no database required for these accounts:
+
+| Username | Email | Role | Password |
+|---|---|---|---|
+| `alice` | alice@qshield.quantum | signer | `qshield123` |
+| `bob` | bob@qshield.quantum | verifier | `qshield123` |
+| `admin` | admin@qshield.quantum | admin | `qshield123` |
+| `eve` | eve@adversary.network | adversary | `qshield123` |
+
+### SecurityContext
+
+`detection/security.py` exports a `SecurityContext` dataclass and `validate_context()` function that binds `user_id` and `role` to every protocol session, rejecting impersonation attempts from unauthorized roles.
+
+### Backend Tests
+
+11 unit tests in `tests/test_auth.py` covering login, registration, token expiry, RBAC, and all four demo accounts:
+
+```bash
+pytest tests/test_auth.py -v
+```
+
+---
+
+## Frontend Interface
+
+**Issue-2 — Frontend Authentication UI (Next.js + Tailwind CSS)**
+
+### Authentication Modal
+
+The app is fully gated behind authentication. An `AuthModal` appears on first load with three tabs:
+
+- **Demo Personas** — one-click login cards for Alice, Bob, Eve, and Admin. Each card shows a per-role accent colour (cyan / emerald / rose / purple) and a loading spinner on the clicked card only.
+- **Sign In** — username and password form.
+- **Create Account** — registration form (requires Firestore; see [Known Limitations](#known-limitations)).
+
+### Navbar
+
+The Navbar shows:
+- Q-SHIELD logo and SIH26141 badge (consistent with the dashboard)
+- Role-filtered navigation tabs — each user only sees tabs their role permits
+- Per-role accent colour on the active tab
+- Backend status indicator (QISKIT LIVE / OFFLINE)
+- Identity badge pill — click to open a dropdown showing username, role, email, access level, cosmetic key fingerprint, and a Sign Out button
+
+### Role-Gated Views
+
+View access is controlled by a single permission map in `src/config/roles.js`. Adding a new view requires one line:
 
 ```
-Configuration
-      |
-      v
-Quantum Simulation (Qiskit)
-      |
-      v
-Attack Injection
-      |
-      v
-Measurement Collection
-      |
-      v
-Statistical Analysis
-      |
-      v
-Security Metrics + Explanation
+overview:   all roles
+simulation: signer only
+batch:      signer, admin
+threats:    admin only
+history:    all roles
 ```
 
-The framework will also aim to show *why* a detection decision was made — e.g. which statistical comparison was used and how far the observed data deviated from the expected baseline — rather than only a pass/fail label.
+> **Note:** Client-side gating is UX convenience only. The backend enforces real RBAC on every API call.
+
+### Session Persistence
+
+- JWT stored in `localStorage` under `qshield_token`
+- On page refresh, token is re-validated against `GET /auth/me` — not trusted blindly from storage
+- JWT `exp` claim decoded client-side; automatic logout fires at expiry via `setTimeout`
+- Cross-tab sync via the browser `storage` event — sign out in one tab, all tabs log out
+
+### New Files (Issue-2)
+
+| File | Purpose |
+|---|---|
+| `src/config/roles.js` | Role metadata, demo personas, `VIEW_PERMISSIONS` map, `canAccess()` |
+| `src/services/authApi.js` | Fetch wrapper for the three `/auth` endpoints with error normalisation |
+| `src/hooks/useAuth.jsx` | `AuthProvider` + `useAuth()` hook |
+| `src/components/auth/AuthModal.jsx` | Three-tab authentication modal |
+| `src/components/auth/auth.css` | Glassmorphic styles, per-role accents, motion-safe animations |
+| `src/components/layout/UserBadge.jsx` | `RoleGate` component |
+| `frontend/.env.example` | Environment variable template |
+
+### Modified Files (Issue-2)
+
+| File | Change |
+|---|---|
+| `src/app/layout.jsx` | Wrapped tree in `<AuthProvider>` |
+| `src/app/page.jsx` | Auth gate, session restore spinner, `<RoleGate>` on each view |
+| `src/components/Navbar.jsx` | Role-filtered tabs, per-role accent, identity badge dropdown |
+
+---
+
+## Getting Started & Running Locally
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- pip
+
+### 1. Install Python Dependencies
+
+```bash
+cd Q-Shield
+pip install -r requirements.txt
+```
+
+### 2. Run the Backend
+
+```bash
+python run_backend.py
+```
+
+Backend runs at `http://127.0.0.1:8000`. Interactive API docs at `http://127.0.0.1:8000/docs`.
+
+### 3. Run the Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`. The AuthModal appears — click any Demo Persona to log in instantly.
+
+### 4. Run Backend Tests
+
+```bash
+pytest tests/test_auth.py -v
+# 11 tests — login, registration, token expiry, RBAC, demo accounts
+```
+
+To run the full test suite:
+
+```bash
+pytest
+```
+
+### 5. Environment Variables (optional)
+
+Copy `frontend/.env.example` to `frontend/.env.local` and adjust if your backend runs on a different port:
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+```
+
+For Firestore (required for new user registration only):
+
+```env
+GOOGLE_APPLICATION_CREDENTIALS=firebase/serviceAccountKey.json
+```
+
+> The four demo accounts (alice, bob, admin, eve) are hardcoded in memory and work without any Firestore configuration.
+
+### 6. Build for Production
+
+```bash
+cd frontend
+set NODE_OPTIONS=--max-old-space-size=512
+npx next build
+```
 
 ---
 
 ## Technology Stack
 
 **Frontend**
-- JavaScript, React, Next.js
-- Tailwind CSS
-- Recharts / D3.js — for experiment controls and visualizations
+- Next.js 14 (App Router) — React framework
+- Tailwind CSS — utility-first styling with custom obsidian/quantum colour palette
+- Lucide React — icons
+- Recharts — experiment visualisations
 
 **Backend**
-- Python, FastAPI — runs experiments and connects the frontend to the simulation engine
+- Python, FastAPI — REST API and quantum simulation engine
+- PyJWT — JWT token generation and validation
+- bcrypt — password hashing
+- Uvicorn — ASGI server
 
 **Quantum Simulation**
 - Qiskit, Qiskit Aer — circuit simulation, Bell-state generation, teleportation, Pauli operations, measurements
@@ -302,36 +452,81 @@ The framework will also aim to show *why* a detection decision was made — e.g.
 - NumPy, SciPy — measurement processing, probability calculations, statistical comparisons
 
 **Data Storage**
-- Firebase Firestore — experiment results, security metrics, experiment history
+- Firebase Firestore — experiment results, security metrics, experiment history (optional for demo)
 
-**Deployment**
-- Vercel (frontend)
-- Cloud deployment for the Python backend
-- Firebase (storage)
+---
 
-Authentication is not a current priority for this prototype and is out of scope for this README.
+## Project Structure
+
+```
+Q-Shield/
+├── backend/
+│   ├── routers/
+│   │   ├── auth.py          # POST /auth/login, /auth/register, GET /auth/me
+│   │   ├── attacks.py
+│   │   ├── experiments.py
+│   │   └── results.py
+│   ├── services/
+│   │   ├── auth_service.py  # bcrypt, JWT, demo accounts, DEMO_USERS
+│   │   └── experiment_service.py
+│   ├── dependencies.py      # get_current_user, require_roles RBAC
+│   ├── schemas.py           # UserLogin, UserRegister, UserResponse, TokenResponse
+│   └── main.py
+├── detection/
+│   └── security.py          # SecurityContext, validate_context()
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.jsx   # AuthProvider wraps the tree
+│   │   │   ├── page.jsx     # Auth gate + RoleGate per view
+│   │   │   └── globals.css
+│   │   ├── components/
+│   │   │   ├── auth/
+│   │   │   │   ├── AuthModal.jsx   # Three-tab auth modal
+│   │   │   │   └── auth.css        # Glassmorphic styles
+│   │   │   ├── layout/
+│   │   │   │   └── UserBadge.jsx   # RoleGate component
+│   │   │   └── Navbar.jsx          # Role-filtered nav + identity badge
+│   │   ├── config/
+│   │   │   └── roles.js     # ROLE_ACCENT, DEMO_PERSONAS, VIEW_PERMISSIONS
+│   │   ├── hooks/
+│   │   │   └── useAuth.jsx  # AuthProvider, useAuth()
+│   │   └── services/
+│   │       ├── api.js        # Simulation, metrics, health endpoints
+│   │       └── authApi.js    # /auth/login, /auth/register, /auth/me
+│   └── package.json
+├── quantum/                  # QDS protocol simulation
+├── attacks/                  # Attack scenario implementations
+├── detection/                # Statistical threat detection
+├── experiments/              # Experiment pipeline and storage
+├── tests/
+│   ├── test_auth.py          # 11 auth unit tests
+│   └── ...
+├── requirements.txt
+└── run_backend.py
+```
 
 ---
 
 ## Why No AI/ML?
 
-The problem statement explicitly excludes AI and Machine Learning from the detection method. The framework's detection logic is therefore built from:
+The problem statement explicitly excludes AI and Machine Learning from the detection method. The framework's detection logic is built from:
 
 - Quantum measurements
 - Mathematical and statistical analysis
 - Protocol-derived security thresholds
 
-This keeps the detection process explainable and directly tied to the underlying quantum protocol, rather than dependent on a trained model.
+This keeps the detection process explainable and directly tied to the underlying quantum protocol.
 
 ---
 
 ## Dataset
 
-We do not currently have access to an official SIH26141 dataset, and this README does not claim one exists or describe its contents.
+We do not currently have access to an official SIH26141 dataset.
 
 - The core framework generates its own experimental measurement data by running Qiskit simulations.
-- If an official dataset becomes available, it can be used for validation or comparison alongside our simulated results.
-- Since the problem statement excludes AI/ML, any such dataset will be used for validation/comparison only — never as training data.
+- If an official dataset becomes available, it can be used for validation or comparison alongside simulated results.
+- Since the problem statement excludes AI/ML, any such dataset will be used for validation only — never as training data.
 
 ---
 
@@ -339,18 +534,20 @@ We do not currently have access to an official SIH26141 dataset, and this README
 
 - Teleportation-based QDS simulation
 - Bell-state entanglement simulation
-- Pauli correction operations
-- Pauli eigenstate measurements
+- Pauli correction operations and eigenstate measurements
 - Projective measurement analysis
-- Simulation of forgery, impersonation, replay, unauthorized verification, and channel manipulation scenarios
+- Simulation of all five attack scenarios
 - Statistical threat detection pipeline
 - Forgery probability analysis
 - Verification accuracy, detection rate, false accept rate, false reject rate
 - Support for repeated/batched experiments
 - Interactive experiment configuration
-- Measurement visualization
+- Measurement visualisation
 - Security analysis with explanation of detection decisions
 - Experiment history
+- JWT-based authentication with role-based access control
+- Glassmorphic authentication UI with demo persona one-click login
+- Role-filtered navigation and identity badge
 
 ---
 
@@ -359,50 +556,21 @@ We do not currently have access to an official SIH26141 dataset, and this README
 - **No AI/ML** — detection relies on quantum measurements and statistical methods only.
 - **Explainable** — detection decisions are reported along with the reasoning behind them.
 - **Experiment-driven** — performance claims come from repeated simulations, not single demonstrations.
-- **Protocol-grounded** — detection logic is tied to the specific QDS protocol being simulated, not treated as one-size-fits-all.
+- **Protocol-grounded** — detection logic is tied to the specific QDS protocol being simulated.
+- **Identity-bound** — every cryptographic operation is bound to a verified user identity and role via JWT and SecurityContext.
 
 ---
 
-## Getting Started & Running Locally
+## Known Limitations
 
-### 1. Environment & Firebase Credentials
+- **Create Account requires Firestore.** The `POST /auth/register` endpoint calls `create_user()` which writes to Firestore. Without `GOOGLE_APPLICATION_CREDENTIALS` configured, the request crashes before sending a response. The four demo accounts work without Firestore. This will be resolved in Issue-6 (local JSON fallback).
 
-1. Place your Firebase service account JSON key in:
-   ```
-   firebase/serviceAccountKey.json
-   ```
-2. Create a `.env` file in the project root:
-   ```env
-   GOOGLE_APPLICATION_CREDENTIALS=firebase/serviceAccountKey.json
-   ```
+- **Key fingerprint is cosmetic.** The fingerprint shown in the Navbar identity badge is a djb2 hash of `user_id + username` derived client-side. It is not real Table-1 QDS key material. The backend `UserResponse` schema does not currently return a public key field. This is a pending request for Issue-1.
 
-### 2. Run Backend Server (FastAPI + Qiskit Aer)
-
-```bash
-# Using uv or virtual environment:
-uv run uvicorn backend.main:app --reload --port 8000
-```
-Backend will be live at `http://127.0.0.1:8000` with interactive API docs at `http://127.0.0.1:8000/docs`.
-
-### 3. Run Frontend Dashboard (Next.js + Tailwind CSS)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Open `http://localhost:3000` in your browser to interact with the Q-SHIELD Quantum Threat Detection Studio.
-
-### 4. Run Automated Test Suite
-
-```bash
-uv run pytest
-```
-Executes all 88 unit and integration tests.
+- **Client-side role gating is UX only.** The `RoleGate` component and filtered nav tabs are convenience features. The backend enforces real RBAC on every API call via `require_roles()`.
 
 ---
 
 ## Disclaimer
 
 This project is a software simulation and research prototype. Results from simulated quantum environments are not proof of security for real-world quantum communication systems. Security conclusions depend on the correctness of the implemented QDS protocol, the attack model used, the statistical analysis applied, and the assumptions underlying all of these.
-

@@ -1,0 +1,161 @@
+{
+  "attack_type": "flip",
+  "shots": 1000,
+  "trials": 3,
+  "results": [
+    {
+      "trial": 1,
+      "attack_type": "flip",
+      "shots": 1000,
+      "protocol_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "counts": {
+          "100": 135,
+          "110": 130,
+          "101": 130,
+          "011": 119,
+          "000": 122,
+          "010": 115,
+          "001": 124,
+          "111": 125
+        }
+      },
+      "attacked_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "attack_type": "flip",
+        "fraction": 0.5,
+        "bob_counts": {
+          "0": 240,
+          "1": 760
+        }
+      },
+      "detection_result": {
+        "accepted": false,
+        "observed_probability": 0.24,
+        "expected_probability": 0.5,
+        "confidence": 0.95,
+        "interval": [
+          0.21455652518754262,
+          0.2674333892249461
+        ],
+        "bob_counts": {
+          "0": 240,
+          "1": 760
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "attack_type": "flip",
+      "shots": 1000,
+      "protocol_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "counts": {
+          "100": 126,
+          "111": 118,
+          "010": 108,
+          "011": 128,
+          "000": 133,
+          "101": 122,
+          "110": 135,
+          "001": 130
+        }
+      },
+      "attacked_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "attack_type": "flip",
+        "fraction": 0.5,
+        "bob_counts": {
+          "0": 250,
+          "1": 750
+        }
+      },
+      "detection_result": {
+        "accepted": false,
+        "observed_probability": 0.25,
+        "expected_probability": 0.5,
+        "confidence": 0.95,
+        "interval": [
+          0.2241530989836914,
+          0.27776028025908617
+        ],
+        "bob_counts": {
+          "0": 250,
+          "1": 750
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "attack_type": "flip",
+      "shots": 1000,
+      "protocol_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "counts": {
+          "100": 125,
+          "001": 126,
+          "110": 132,
+          "111": 122,
+          "101": 124,
+          "011": 128,
+          "010": 109,
+          "000": 134
+        }
+      },
+      "attacked_result": {
+        "input_state": "plus",
+        "measurement_basis": "Z",
+        "shots": 1000,
+        "attack_type": "flip",
+        "fraction": 0.5,
+        "bob_counts": {
+          "0": 249,
+          "1": 751
+        }
+      },
+      "detection_result": {
+        "accepted": false,
+        "observed_probability": 0.249,
+        "expected_probability": 0.5,
+        "confidence": 0.95,
+        "interval": [
+          0.22319257656829508,
+          0.2767284561914536
+        ],
+        "bob_counts": {
+          "0": 249,
+          "1": 751
+        }
+      }
+    }
+  ],
+  "validation": {
+    "valid": true,
+    "trial_count": 3
+  },
+  "metrics": {
+    "total_trials": 3,
+    "detected": 3,
+    "accepted": 0,
+    "detection_rate": 1.0,
+    "total_attacks": 3,
+    "total_legitimate": 0,
+    "detected_attacks": 3,
+    "false_accepts": 0,
+    "false_rejects": 0,
+    "false_acceptance_rate": 0.0,
+    "false_rejection_rate": 0.0,
+    "accuracy": 1.0
+  },
+  "experiment_id": "experiment_0001"
+}

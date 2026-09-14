@@ -125,3 +125,87 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+# -------------------------------------------------------------
+# Document QDS Schemas (Multi-Block Quantum Seal)
+# -------------------------------------------------------------
+
+class BlockSignatureSchema(BaseModel):
+    message: str
+    signing_state: str
+    sender_measurement: str
+    public_verification_info: Dict[str, Any]
+
+
+class DocumentSignRequest(BaseModel):
+    document_base64: Optional[str] = Field(
+        default=None,
+        description="Base64-encoded raw file content",
+    )
+    document_text: Optional[str] = Field(
+        default=None,
+        description="UTF-8 plain text content of document",
+    )
+    document_hash: Optional[str] = Field(
+        default=None,
+        description="Precomputed SHA-256 hex string",
+    )
+    signer_id: str = Field(
+        default="Alice",
+        description="Identifier of the quantum signer",
+    )
+
+
+class DocumentSignResponse(BaseModel):
+    document_hash: str
+    signer_id: str
+    total_blocks: int
+    quantum_seal: str
+    created_at: str
+    signatures: List[BlockSignatureSchema]
+    status: str = "signed"
+
+
+class DocumentVerifyRequest(BaseModel):
+    document_base64: Optional[str] = Field(
+        default=None,
+        description="Base64-encoded raw file content to verify",
+    )
+    document_text: Optional[str] = Field(
+        default=None,
+        description="UTF-8 plain text content of document to verify",
+    )
+    document_hash: Optional[str] = Field(
+        default=None,
+        description="SHA-256 hex digest to verify against",
+    )
+    quantum_signature: Dict[str, Any] = Field(
+        ...,
+        description="Quantum seal signature payload returned from /documents/sign",
+    )
+    shots: int = Field(
+        default=100,
+        ge=1,
+        le=10000,
+        description="Measurement shots per quantum block",
+    )
+
+
+class DocumentVerifyResponse(BaseModel):
+    valid: bool
+    verification_score: float
+    document_hash: str
+    total_blocks: int
+    valid_blocks: int
+    invalid_blocks: int
+    tampered: bool
+    signer_id: Optional[str] = None
+    status: str
+    details: Dict[str, Any] = {}
+
+
+class DocumentHashResponse(BaseModel):
+    document_hash: str
+    total_blocks: int
+    chunks: List[str]

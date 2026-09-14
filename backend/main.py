@@ -22,7 +22,7 @@ from backend.schemas import (
     ExperimentResponse,
     AttackInfo,
 )
-from backend.routers import attacks, experiments, results, auth
+from backend.routers import attacks, experiments, results, auth, documents
 from backend.services.experiment_service import run_experiment
 from backend.services.history_service import (
     save_experiment,
@@ -50,6 +50,7 @@ app.include_router(attacks.router)
 app.include_router(experiments.router)
 app.include_router(results.router)
 app.include_router(auth.router)
+app.include_router(documents.router)
 
 
 class SignRequest(BaseModel):

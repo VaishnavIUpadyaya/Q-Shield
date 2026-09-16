@@ -1,7 +1,18 @@
-from typing import Dict
+from attacks import get_attack
+from detection.attacks import flip_binary_outcomes
+from detection.detector import detect_binary_anomaly
+import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+# Ensure project root is in sys.path
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from quantum.protocol import (
     SUPPORTED_MESSAGES,
@@ -9,10 +20,18 @@ from quantum.protocol import (
     sign,
     verify,
 )
-
-from attacks import get_attack
-from detection.attacks import flip_binary_outcomes
-from detection.detector import detect_binary_anomaly
+from backend.schemas import (
+    ExperimentRequest,
+    ExperimentResponse,
+    AttackInfo,
+)
+from backend.routers import attacks, experiments, results, auth, documents
+from backend.services.experiment_service import run_experiment
+from backend.services.history_service import (
+    save_experiment,
+    get_all_experiments,
+)
+from experiments.metrics import summarize_results
 
 
 app = FastAPI(
@@ -20,6 +39,21 @@ app = FastAPI(
     description="Quantum Digital Signature verification and threat detection API",
     version="1.0.0",
 )
+
+# Enable CORS for Next.js / React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(attacks.router)
+app.include_router(experiments.router)
+app.include_router(results.router)
+app.include_router(auth.router)
+app.include_router(documents.router)
 
 
 # ============================================================
@@ -107,9 +141,109 @@ def health():
     }
 
 
-# ============================================================
-# P1: SIGN
-# ============================================================
+@app.post("/simulation/run", response_model=ExperimentResponse)
+def run_simulation_endpoint(request: ExperimentRequest):
+    """
+    Run an end-to-end quantum simulation with optional attack injection
+    and statistical threat detection.
+
+    Experiment results are always saved to the in-memory history.
+    Firestore persistence is attempted separately and fails gracefully
+    when Firebase is not configured or unavailable.
+    """
+    try:
+        result = run_experiment(request)
+
+        # ---------------------------------------------------------
+        # 1. Save experiment to the active in-memory history
+        # ---------------------------------------------------------
+        save_experiment(result)
+
+        # ---------------------------------------------------------
+        # 2. Persist experiment to Firebase Firestore
+        # ---------------------------------------------------------
+        # Lazy import keeps the API operational even when Firebase
+        # dependencies or credentials are not configured.
+        try:
+            from experiments.firestore_storage import (
+                save_experiment_to_firestore,
+            )
+
+            save_experiment_to_firestore(result)
+
+        except Exception as firestore_error:
+            # Firestore failure must not fail the simulation request.
+            print(
+                f"Firestore persistence failed: {firestore_error}"
+            )
+
+        return result
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        )
+
+
+@app.get("/metrics")
+def get_security_metrics():
+    """
+    Compute and return aggregated security metrics across all experiment trials.
+    """
+    history = get_all_experiments()
+
+    if not history:
+        return {
+            "total_experiments": 0,
+            "total_trials": 0,
+            "total_attacks": 0,
+            "total_legitimate": 0,
+            "detected_attacks": 0,
+            "false_accepts": 0,
+            "false_rejects": 0,
+            "detection_rate": 1.0,
+            "false_acceptance_rate": 0.0,
+            "false_rejection_rate": 0.0,
+            "accuracy": 1.0,
+            "forgery_probability": 0.0,
+        }
+
+    # Format trials for summarize_results
+    trial_records = []
+
+    for exp in history:
+        attack_type = exp.get("attack_type", "none")
+        detection = exp.get("detection_result") or {}
+
+        is_attack = attack_type != "none"
+        attack_detected = detection.get(
+            "attack_detected",
+            is_attack,
+        )
+
+        trial_records.append({
+            "attack_type": attack_type,
+            "detection_result": {
+                "accepted": not attack_detected,
+                "decision": (
+                    "ACCEPT"
+                    if not attack_detected
+                    else "REJECT"
+                ),
+            },
+        })
+
+    summary = summarize_results(trial_records)
+
+    summary["total_experiments"] = len(history)
+    summary["forgery_probability"] = summary.get(
+        "false_acceptance_rate",
+        0.0,
+    )
+
+    return summary
+
 
 @app.post("/sign")
 def create_signature(
@@ -118,7 +252,6 @@ def create_signature(
     """
     P1 QDS signing endpoint.
     """
-
     try:
         signature = sign(
             message=request.message,
@@ -156,7 +289,6 @@ def verify_signature(
     """
     Verify a QDS signature using P1 protocol logic.
     """
-
     try:
         signature = QDSSignature(
             message=request.message,
@@ -200,16 +332,8 @@ def sign_and_verify(
 ):
     """
     Complete P1 real-time flow:
-
-    Message
-        ->
-    QDS Sign
-        ->
-    QDS Verify
-        ->
-    API Response
+    Message -> QDS Sign -> QDS Verify -> API Response
     """
-
     try:
         signature = sign(
             message=request.message,
@@ -458,3 +582,20 @@ def attack_and_detect(
             status_code=400,
             detail=str(error),
         )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    print(
+        "Starting Q-SHIELD Backend on "
+        "http://127.0.0.1:8000 ..."
+    )
+
+    uvicorn.run(
+        "backend.main:app",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        app_dir=str(PROJECT_ROOT),
+    )

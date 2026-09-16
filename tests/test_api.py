@@ -94,3 +94,39 @@ def test_all_supported_messages():
 
         assert data["verification"]["valid"] is True
         assert data["verification"]["message"] == message
+
+
+def test_attacks_list():
+    response = client.get("/attacks")
+    assert response.status_code == 200
+    attacks = response.json()
+    assert isinstance(attacks, list)
+    assert any(a["attack_type"] == "forgery" for a in attacks)
+    assert any(a["attack_type"] == "channel_manipulation" for a in attacks)
+
+
+def test_metrics_endpoint():
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    metrics = response.json()
+    assert "detection_rate" in metrics
+    assert "accuracy" in metrics
+    assert "false_acceptance_rate" in metrics
+
+
+def test_simulation_run_endpoint():
+    response = client.post(
+        "/simulation/run",
+        json={
+            "message": "00",
+            "shots": 100,
+            "attack_type": "forgery",
+            "attack_fraction": 0.5,
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["attack_type"] == "forgery"
+    assert "measurements" in data
+    assert "detection_result" in data
+    assert data["detection_result"]["attack_detected"] is True

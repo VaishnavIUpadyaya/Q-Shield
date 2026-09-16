@@ -3,7 +3,7 @@
 import React from "react";
 import { ShieldCheck, ShieldAlert, Cpu, Activity, Zap, CheckCircle2, Lock, ArrowRight, FileKey, Radio, Database, Sparkles, Scale, RefreshCw } from "lucide-react";
 
-export default function DashboardOverview({ metrics, onNavigateToSim, onRunPreset }) {
+export default function DashboardOverview({ metrics, onNavigateToSim, onRunPreset, onNavigateToDocStudio }) {
   const kpiCards = [
     {
       title: "Attack Detection Rate",
@@ -129,20 +129,20 @@ export default function DashboardOverview({ metrics, onNavigateToSim, onRunPrese
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <button
-              onClick={onNavigateToSim}
+              onClick={onNavigateToDocStudio}
               className="inline-flex items-center space-x-3 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-500 hover:from-cyan-300 hover:to-indigo-400 text-black font-bold text-base shadow-quantum-glow transition-all transform active:scale-95"
             >
-              <Cpu className="w-5 h-5 text-black" />
-              <span>Launch Simulation Studio</span>
+              <FileKey className="w-5 h-5 text-black" />
+              <span>Document Signing Studio</span>
               <ArrowRight className="w-5 h-5 text-black" />
             </button>
 
             <button
-              onClick={() => onRunPreset("forgery", "00", 0.4)}
+              onClick={onNavigateToSim}
               className="inline-flex items-center space-x-2 px-6 py-3.5 rounded-2xl glass-panel hover:bg-white/[0.08] text-slate-200 hover:text-white font-semibold text-base border border-white/[0.12] transition-all"
             >
-              <Zap className="w-4 h-4 text-quantum-cyan" />
-              <span>Test Forgery Scenario</span>
+              <Cpu className="w-4 h-4 text-quantum-cyan" />
+              <span>Simulation Studio</span>
             </button>
           </div>
         </div>

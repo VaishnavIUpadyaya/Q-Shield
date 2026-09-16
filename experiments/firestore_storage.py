@@ -1,9 +1,15 @@
 import os
 from pathlib import Path
 
-import firebase_admin
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+except ImportError:
+    firebase_admin = None
+    credentials = None
+    firestore = None
+
 from dotenv import load_dotenv
-from firebase_admin import credentials, firestore
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -63,6 +69,9 @@ def _get_firestore_client():
 
     Firebase is initialized only once for the process.
     """
+
+    if firebase_admin is None:
+        raise RuntimeError("firebase_admin is not installed.")
 
     if not firebase_admin._apps:
         credential_path = _get_credential_path()

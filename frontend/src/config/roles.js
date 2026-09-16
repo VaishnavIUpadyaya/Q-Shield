@@ -74,6 +74,7 @@ export const DEMO_PERSONAS = [
  */
 export const VIEW_PERMISSIONS = {
   overview:   ["signer", "verifier", "admin", "adversary"],
+  documents:  ["signer", "verifier", "admin", "adversary"],
   simulation: ["signer"],
   batch:      ["signer", "admin"],
   threats:    ["admin"],

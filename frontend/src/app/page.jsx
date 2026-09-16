@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import DashboardOverview from "@/components/DashboardOverview";
+import DocumentSignerStudio from "@/components/DocumentSignerStudio";
 import SimulationStudio from "@/components/SimulationStudio";
 import BatchExperimentRunner from "@/components/BatchExperimentRunner";
 import ThreatAnalytics from "@/components/ThreatAnalytics";
@@ -168,8 +169,15 @@ export default function Home() {
           <DashboardOverview
             metrics={metrics}
             onNavigateToSim={() => setActiveTab("simulation")}
+            onNavigateToDocStudio={() => setActiveTab("documents")}
             onRunPreset={handleRunPreset}
           />
+        )}
+
+        {activeTab === "documents" && (
+          <RoleGate viewId="documents">
+            <DocumentSignerStudio />
+          </RoleGate>
         )}
 
         {activeTab === "simulation" && (

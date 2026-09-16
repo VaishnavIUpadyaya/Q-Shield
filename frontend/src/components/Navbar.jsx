@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import {
   Shield, ShieldAlert, Cpu, FlaskConical,
   BarChart3, History, Sparkles, LogOut,
-  ChevronDown, User,
+  ChevronDown, User, FileCheck2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { canAccess, ROLE_ACCENT } from "@/config/roles";
@@ -26,13 +26,13 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus, onQuick
   const [badgeOpen, setBadgeOpen] = useState(false);
 
   const allNavItems = [
-    { id: "overview",   label: "Dashboard",        icon: BarChart3 },
-    { id: "simulation", label: "Sim Studio",        icon: Cpu },
-    { id: "batch",      label: "Batch",             icon: FlaskConical },
-    { id: "threats",    label: "Threat Analytics",  icon: ShieldAlert },
-    { id: "history",    label: "Logs",              icon: History },
-  ];
-
+  { id: "overview", label: "Dashboard", icon: BarChart3 },
+  { id: "documents", label: "Document Verification", icon: FileCheck2 },
+  { id: "simulation", label: "Sim Studio", icon: Cpu },
+  { id: "batch", label: "Batch", icon: FlaskConical },
+  { id: "threats", label: "Threat Analytics", icon: ShieldAlert },
+  { id: "history", label: "Logs", icon: History },
+];
   const navItems = user
     ? allNavItems.filter((item) => canAccess(user.role, item.id))
     : allNavItems;

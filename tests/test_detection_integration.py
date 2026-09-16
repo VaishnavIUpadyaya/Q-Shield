@@ -35,8 +35,6 @@ def test_manipulated_measurements_are_rejected():
 
     assert result.accepted is False
 
-    from quantum.protocol import sign, verify
-
 
 def test_protocol_output_is_compatible_with_detection_layer():
     signature = sign("00")

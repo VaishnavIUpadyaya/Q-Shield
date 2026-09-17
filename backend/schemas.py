@@ -203,6 +203,7 @@ class DocumentVerifyResponse(BaseModel):
     signer_id: Optional[str] = None
     status: str
     details: Dict[str, Any] = {}
+    telemetry: Dict[str, Any] = {}
 
 
 class DocumentHashResponse(BaseModel):

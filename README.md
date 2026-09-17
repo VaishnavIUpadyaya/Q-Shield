@@ -1,3 +1,5 @@
+
+
 # Quantum-Inspired Cyber Threat Detection for Digital Signature Security
 
 **SIH26141 · Team Egreen Quanta · Blockchain & Cybersecurity**
@@ -5,26 +7,46 @@
 A quantum-inspired cybersecurity framework for detecting attacks against teleportation-based Quantum Digital Signature (QDS) protocols, using quantum measurements and statistical analysis — without Artificial Intelligence or Machine Learning.
 
 
+
+
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
+
 - [Our Solution](#our-solution)
+
 - [Objectives](#objectives)
+
 - [How It Works](#how-it-works)
+
   - [1. Quantum Signature Protocol](#1-quantum-signature-protocol)
+
   - [2. Attack Scenarios](#2-attack-scenarios)
+
   - [3. Quantum Measurement Analysis](#3-quantum-measurement-analysis)
+
   - [4. Statistical Threat Detection](#4-statistical-threat-detection)
+
 - [Security Metrics](#security-metrics)
+
 - [Repeated Experiments](#repeated-experiments)
+
 - [Interactive Prototype](#interactive-prototype)
+
 - [Authentication](#authentication)
+
 - [Technology Stack](#technology-stack)
+
 - [Why No AI/ML?](#why-no-aiml)
+
 - [Dataset](#dataset)
+
 - [Expected Deliverables](#expected-deliverables)
+
 - [Key Principles](#key-principles)
+
 - [Known Limitations](#known-limitations)
+
 - [Disclaimer](#disclaimer)
 
 ---
@@ -44,17 +66,25 @@ Quantum Digital Signature (QDS) protocols offer an alternative approach, using p
 This problem statement calls for a quantum-inspired cyber threat detection framework designed for QDS systems. The framework must detect threats to the integrity and authenticity of digital signatures, including:
 
 - Signature forgery
+
 - Impersonation
+
 - Replay attacks
+
 - Unauthorized verification attempts
+
 - Quantum channel manipulation
 
 The detection approach must **not use Artificial Intelligence or Machine Learning**. Instead, it must rely on:
 
 - Pauli eigenstates
+
 - Quantum measurements
+
 - Projective measurements
+
 - Measurement statistics
+
 - Statistical threshold-based detection
 
 The system should calculate forgery probabilities and verification accuracy while respecting the security assumptions of the underlying QDS protocol.
@@ -70,33 +100,61 @@ We are building a **Quantum Digital Signature Security Testing and Detection Fra
 The core idea: a user configures a security experiment, the system simulates a teleportation-based QDS protocol, an attack is optionally introduced, quantum measurements are collected, the measurements are statistically analyzed, and the system reports whether the signature or communication satisfies the expected security conditions. Security metrics are calculated from repeated experiments, not a single run.
 
 ```
+
                  Quantum QDS Protocol
+
                          |
+
                          v
+
                 Normal / Attack Scenario
+
                          |
+
                          v
+
                   Qiskit Simulation
+
                          |
+
                          v
+
                 Quantum Measurements
+
                          |
+
                          v
+
                 Statistical Analysis
+
                          |
+
                          v
+
                  Threat Detection
+
                          |
+
              +-----------+-----------+
+
              |                       |
+
              v                       v
+
         Legitimate                Attack
+
          ACCEPT                   REJECT
+
              |                       |
+
              +-----------+-----------+
+
                          |
+
                          v
+
                  Security Metrics
+
 ```
 
 This is intended as a working research prototype, not a static demo with pre-set results.
@@ -106,8 +164,11 @@ This is intended as a working research prototype, not a static demo with pre-set
 ## Objectives
 
 1. Design a quantum-inspired threat detection framework for teleportation-based QDS protocols.
+
 2. Detect signature forgery, impersonation, replay attacks, unauthorized verification attempts, and quantum channel manipulation.
+
 3. Use Pauli eigenstates, quantum measurements, and statistical thresholds for threat detection — without AI/ML.
+
 4. Evaluate the system using attack simulations, forgery probability, detection rate, verification accuracy, and false-accept rate, derived from repeated experiments.
 
 ---
@@ -119,10 +180,15 @@ This is intended as a working research prototype, not a static demo with pre-set
 The framework will simulate a teleportation-based QDS protocol, including:
 
 - Bell-state entanglement
+
 - Quantum teleportation
+
 - Pauli correction operations
+
 - Pauli eigenstate preparation
+
 - Projective measurements
+
 - Signature verification
 
 A legitimate signature run is used to establish the expected measurement behavior that later experiments are compared against.
@@ -132,46 +198,65 @@ A legitimate signature run is used to establish the expected measurement behavio
 The framework is designed to address five threat scenarios. Not all of them are detected the same way — each has a different relationship to quantum measurement data.
 
 **Forgery Attack**
+
 An attacker attempts to create or modify a valid signature.
 
 ```
+
 Legitimate:  Signer   ──> Verifier   (valid signature)
+
 Forgery:     Attacker ──> Verifier   (fake / modified signature)
+
 ```
 
 A forged signature is expected to produce measurement statistics that deviate from the legitimate baseline. The detector will compare observed statistics against this baseline to flag likely forgeries.
 
 **Impersonation**
+
 An attacker attempts to act as the legitimate signer.
 
 ```
+
 Signer   ──> Verifier   (legitimate)
+
 Attacker ──> Verifier   (pretending to be signer)
+
 ```
 
 Detection here depends on the verification conditions defined by the specific QDS protocol being simulated (e.g. whether the attacker can reproduce the expected correlations between signer and verifier). This will be evaluated against the chosen protocol's verification rules, not treated as a generic measurement anomaly.
 
 **Replay Attack**
+
 An attacker captures a previously valid signature and attempts to reuse it.
 
 ```
+
 Signer ──> Verifier
+
     |
+
     | signature captured
+
     v
+
 Attacker ──> Verifier   (reuses old signature)
+
 ```
 
 Detecting a replay is not purely a measurement-statistics problem — it typically requires message or session freshness information (e.g. sequence numbers, timestamps, or one-time session data) in addition to measurement analysis. The framework will incorporate freshness checks alongside statistical comparison.
 
 **Unauthorized Verification**
+
 An unauthorized entity attempts to perform or access verification operations. This is primarily an access-control concern rather than a quantum-measurement anomaly, and will be handled by recording and evaluating verification attempts against defined protocol rules, in addition to any relevant measurement checks.
 
 **Quantum Channel Manipulation**
+
 An attacker interferes with the quantum state while it is in transit.
 
 ```
+
 Signer ──> Attacker (modifies state) ──> Verifier
+
 ```
 
 Channel manipulation can alter the resulting measurement distribution, so this scenario is the closest fit to pure statistical detection from measurement outcomes.
@@ -181,16 +266,23 @@ Channel manipulation can alter the resulting measurement distribution, so this s
 Each simulated experiment is run multiple times, referred to as **shots**. For example:
 
 ```
+
 1000 measurements
+
 State 00 → 492
+
 State 01 → 508
+
 ```
 
 These counts are converted into probability distributions:
 
 ```
+
 P(00) ≈ 49.2%
+
 P(01) ≈ 50.8%
+
 ```
 
 The observed distribution is compared against the expected distribution for a legitimate signature.
@@ -200,16 +292,27 @@ The observed distribution is compared against the expected distribution for a le
 No AI or Machine Learning is used at any stage. The detection pipeline is:
 
 ```
+
 Expected (legitimate) measurement distribution
+
                 |
+
                 v
+
        Observed measurement distribution
+
                 |
+
                 v
+
       Statistical comparison / difference
+
                 |
+
                 v
+
         Detection decision
+
 ```
 
 Detection thresholds will be derived from the selected QDS protocol and the statistical model used for comparison (for example, a chi-squared test or a confidence-interval-based bound), rather than fixed arbitrary numbers. The exact method will be finalized as the detector is implemented.
@@ -221,11 +324,17 @@ Detection thresholds will be derived from the selected QDS protocol and the stat
 The framework will evaluate detection performance using the following metrics, calculated from repeated experiments:
 
 | Metric | Definition |
+
 |---|---|
+
 | **Detection Rate** | Fraction of actual attacks correctly flagged as attacks |
+
 | **False Accept Rate** | Fraction of malicious attempts incorrectly accepted as legitimate |
+
 | **False Reject Rate** | Fraction of legitimate signatures incorrectly rejected |
+
 | **Verification Accuracy** | Fraction of all signatures (legitimate and malicious) correctly classified |
+
 | **Forgery Probability** | Estimated probability that a forged signature passes verification, under the tested conditions |
 
 These values are outputs of running many simulated experiments — they are not fixed or assumed in advance.
@@ -237,9 +346,13 @@ These values are outputs of running many simulated experiments — they are not 
 A single simulation run is not sufficient to make a security claim. The framework will run each scenario many times to build up a statistical picture. For example, a configuration might look like:
 
 ```
+
 Attack type: Forgery
+
 Shots per experiment: 5,000
+
 Number of trials: 100
+
 ```
 
 *(These numbers are illustrative only — actual values will depend on the protocol and what is computationally practical.)*
@@ -255,32 +368,55 @@ This is intended to be an **interactive testing tool**, not a static page showin
 Planned user-configurable parameters include:
 
 - QDS protocol / scenario selection
+
 - Attack type
+
 - Number of qubits
+
 - Number of measurement shots
+
 - Number of trials
+
 - Measurement basis
+
 - Attack-specific parameters (where applicable)
 
 Changing a configuration should trigger an actual quantum simulation and a fresh statistical analysis — not a lookup of a pre-computed result.
 
 ```
+
 Configuration
+
       |
+
       v
+
 Quantum Simulation (Qiskit)
+
       |
+
       v
+
 Attack Injection
+
       |
+
       v
+
 Measurement Collection
+
       |
+
       v
+
 Statistical Analysis
+
       |
+
       v
+
 Security Metrics + Explanation
+
 ```
 
 The framework will also aim to show *why* a detection decision was made — e.g. which statistical comparison was used and how far the observed data deviated from the expected baseline — rather than only a pass/fail label.
@@ -290,25 +426,35 @@ The framework will also aim to show *why* a detection decision was made — e.g.
 ## Technology Stack
 
 **Frontend**
+
 - JavaScript, React, Next.js
+
 - Tailwind CSS
+
 - Recharts / D3.js — for experiment controls and visualizations
 
 **Backend**
+
 - Python, FastAPI — runs experiments and connects the frontend to the simulation engine
 
 **Quantum Simulation**
+
 - Qiskit, Qiskit Aer — circuit simulation, Bell-state generation, teleportation, Pauli operations, measurements
 
 **Analysis**
+
 - NumPy, SciPy — measurement processing, probability calculations, statistical comparisons
 
 **Data Storage**
+
 - Firebase Firestore — experiment results, security metrics, experiment history
 
 **Deployment**
+
 - Vercel (frontend)
+
 - Cloud deployment for the Python backend
+
 - Firebase (storage)
 
 Authentication is implemented. See the [Authentication](#authentication) section below.
@@ -324,10 +470,15 @@ The application is fully gated behind authentication. Every session is bound to 
 Four accounts are pre-seeded in memory and work without any database configuration:
 
 | Username | Role | Password |
+
 |---|---|---|
+
 | `alice` | Signer | `qshield123` |
+
 | `bob` | Verifier | `qshield123` |
+
 | `admin` | Admin | `qshield123` |
+
 | `eve` | Adversary | `qshield123` |
 
 ### Login Interface
@@ -335,7 +486,9 @@ Four accounts are pre-seeded in memory and work without any database configurati
 Opening `http://localhost:3000` shows an authentication modal with three tabs:
 
 - **Demo Personas** — one-click login cards for each of the four accounts above. This is the fastest way to start a demo.
+
 - **Sign In** — standard username and password form.
+
 - **Create Account** — registers a new Verifier account. Requires Firestore to be configured (see [Known Limitations](#known-limitations)).
 
 ### Role-Based View Access
@@ -343,10 +496,15 @@ Opening `http://localhost:3000` shows an authentication modal with three tabs:
 Each role sees only the tabs relevant to their function:
 
 | Role | Views accessible |
+
 |---|---|
+
 | Signer (Alice) | Dashboard, Simulation Studio, Batch Benchmarks, Experiment Logs |
-| Verifier (Bob) | Dashboard, Experiment Logs |
+
+| Verifier (Bob) | Dashboard, Document Verification, Experiment Logs |
+
 | Admin | Dashboard, Batch Benchmarks, Threat Analytics, Experiment Logs |
+
 | Adversary (Eve) | Dashboard, Experiment Logs |
 
 The active user's name, role, and a session identifier are shown in the navbar. Clicking the badge opens a dropdown with full session details and a sign-out button.
@@ -354,7 +512,9 @@ The active user's name, role, and a session identifier are shown in the navbar. 
 ### Session Behaviour
 
 - JWT is stored in `localStorage` and re-validated against the backend on every page refresh.
+
 - Session expires automatically after 60 minutes.
+
 - Signing out in one browser tab signs out all other open tabs immediately.
 
 ---
@@ -364,7 +524,9 @@ The active user's name, role, and a session identifier are shown in the navbar. 
 The problem statement explicitly excludes AI and Machine Learning from the detection method. The framework's detection logic is therefore built from:
 
 - Quantum measurements
+
 - Mathematical and statistical analysis
+
 - Protocol-derived security thresholds
 
 This keeps the detection process explainable and directly tied to the underlying quantum protocol, rather than dependent on a trained model.
@@ -376,7 +538,9 @@ This keeps the detection process explainable and directly tied to the underlying
 We do not currently have access to an official SIH26141 dataset, and this README does not claim one exists or describe its contents.
 
 - The core framework generates its own experimental measurement data by running Qiskit simulations.
+
 - If an official dataset becomes available, it can be used for validation or comparison alongside our simulated results.
+
 - Since the problem statement excludes AI/ML, any such dataset will be used for validation/comparison only — never as training data.
 
 ---
@@ -384,21 +548,37 @@ We do not currently have access to an official SIH26141 dataset, and this README
 ## Expected Deliverables
 
 - Teleportation-based QDS simulation
+
 - Bell-state entanglement simulation
+
 - Pauli correction operations
+
 - Pauli eigenstate measurements
+
 - Projective measurement analysis
+
 - Simulation of forgery, impersonation, replay, unauthorized verification, and channel manipulation scenarios
+
 - Statistical threat detection pipeline
+
 - Forgery probability analysis
+
 - Verification accuracy, detection rate, false accept rate, false reject rate
+
 - Support for repeated/batched experiments
+
 - Interactive experiment configuration
+
 - Measurement visualization
+
 - Security analysis with explanation of detection decisions
+
 - Experiment history
+
 - JWT-based authentication with role-based access control
+
 - Glassmorphic login interface with one-click demo persona selection
+
 - Role-filtered navigation and active session identity badge
 
 ---
@@ -406,9 +586,13 @@ We do not currently have access to an official SIH26141 dataset, and this README
 ## Key Principles
 
 - **No AI/ML** — detection relies on quantum measurements and statistical methods only.
+
 - **Explainable** — detection decisions are reported along with the reasoning behind them.
+
 - **Experiment-driven** — performance claims come from repeated simulations, not single demonstrations.
+
 - **Protocol-grounded** — detection logic is tied to the specific QDS protocol being simulated, not treated as one-size-fits-all.
+
 - **Identity-bound** — every cryptographic operation is bound to a verified user identity and role.
 
 ---
@@ -416,7 +600,9 @@ We do not currently have access to an official SIH26141 dataset, and this README
 ## Known Limitations
 
 - **Create Account requires Firestore.** Registering a new user writes to Firestore via `create_user()`. Without `GOOGLE_APPLICATION_CREDENTIALS` configured, the request fails. The four demo accounts are hardcoded in memory and always work without Firestore.
+
 - **Key fingerprint in the navbar is cosmetic.** The session identifier shown in the identity badge is derived client-side from the user ID and username. It is not real QDS key material. The backend does not currently return a public key field.
+
 - **Client-side role gating is UX only.** The filtered navigation tabs are a convenience feature. The backend enforces real access control on every API call.
 
 ---
@@ -428,46 +614,67 @@ We do not currently have access to an official SIH26141 dataset, and this README
 Firebase is optional for running the demo — the four pre-seeded accounts work without it. To enable new user registration and Firestore persistence:
 
 1. Place your Firebase service account JSON key in:
+
    ```
+
    firebase/serviceAccountKey.json
+
    ```
+
 2. Create a `.env` file in the project root:
+
    ```env
+
    GOOGLE_APPLICATION_CREDENTIALS=firebase/serviceAccountKey.json
+
    ```
 
 ### 2. Install Python Dependencies
 
 ```bash
+
 pip install -r requirements.txt
+
 ```
 
 ### 3. Run Backend Server (FastAPI + Qiskit Aer)
 
 ```bash
+
 python run_backend.py
+
 ```
+
 Backend will be live at `http://127.0.0.1:8000` with interactive API docs at `http://127.0.0.1:8000/docs`.
 
 ### 4. Run Frontend Dashboard (Next.js + Tailwind CSS)
 
 ```bash
+
 cd frontend
+
 npm install
+
 npm run dev
+
 ```
+
 Open `http://localhost:3000`. The authentication modal appears — click any Demo Persona card to log in instantly.
 
 ### 5. Run Automated Test Suite
 
 ```bash
+
 pytest
+
 ```
 
 To run only the authentication tests:
 
 ```bash
+
 pytest tests/test_auth.py -v
+
 ```
 
 ### 6. Frontend Environment Variable (optional)
@@ -475,12 +682,259 @@ pytest tests/test_auth.py -v
 Copy `frontend/.env.example` to `frontend/.env.local` if your backend runs on a different port:
 
 ```env
+
 NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+
 ```
 
 ---
 
-## Disclaimer
+**
+Completed Implementation
+
+The current Q-Shield prototype includes the completed Document Verification Hub developed for Issue #17, extending the existing quantum-inspired security framework without changing the core project workflow.
+
+Document Verification Hub
+
+The Document Verification Hub provides an interactive interface for verifying a document against its Quantum Digital Signature (.qseal).
+
+The verifier can:
+
+Upload an original document.
+Upload the corresponding .qseal quantum signature.
+Verify the document through the FastAPI backend.
+View the result as AUTHENTIC or TAMPER DETECTED.
+View the verification score and block-level results.
+Inspect the quantum measurement telemetry used during verification.
+Simulate adversary tampering and automatically re-verify the modified document.
+Document Verification Flow
+Original Document + Quantum Seal
+              |
+              v
+       Document Verification Hub
+              |
+              v
+        FastAPI Backend
+              |
+              v
+         QDS Verification
+              |
+              v
+     Qiskit Aer Simulation
+              |
+              v
+    Quantum Measurement Results
+              |
+              v
+      Statistical Analysis
+              |
+              v
+      Verification Decision
+         /             \
+        v               v
+   AUTHENTIC       TAMPER DETECTED
+Adversary Tampering Simulation
+
+The Document Verification Hub includes a Simulate Adversary Tampering action.
+
+The simulation creates a modified copy of the uploaded document by changing one byte. The modified document is then verified against the original .qseal signature.
+
+Original Document
+       |
+       v
+Normal Verification
+       |
+       v
+AUTHENTIC
+
+        ↓
+
+One-byte Modification
+       |
+       v
+Verification Against
+Original Quantum Seal
+       |
+       v
+TAMPER DETECTED
+
+The simulation uses the existing Qiskit Aer environment and does not require an actual attacker or quantum computer.
+
+Quantum Telemetry Inspector
+
+The verification result includes a Quantum Telemetry Inspector that exposes the statistical evidence generated during verification.
+
+Telemetry	Description
+TVD	Total Variation Distance between expected and observed measurement distributions
+Wilson 95% CI	Wilson confidence interval for the observed verification success proportion
+Pauli Z⊗Z Correlation	Two-qubit correlation calculated from the existing Z-basis verification measurements
+Quantum Shots	Total number of quantum simulation measurements used during verification
+Successful Shots	Number of measurements matching the expected message for their verification block
+Confidence Level	Statistical confidence level used for the Wilson interval
+
+The telemetry is calculated from the actual measurements produced by the Qiskit Aer simulator.
+
+Statistical Analysis
+
+For each document verification block:
+
+The expected two-bit message is obtained from the document hash.
+The QDS verification circuit is executed using Qiskit Aer.
+Measurement counts are collected from repeated shots.
+Counts are converted into probability distributions.
+The observed distribution is compared with the expected distribution.
+Total Variation Distance (TVD) is calculated.
+Successful measurements are counted.
+A Wilson confidence interval is calculated for the verification success proportion.
+The Z⊗Z Pauli projection correlation is calculated from the measured two-qubit outcomes.
+Block-level results are aggregated into document-level verification telemetry.
+Quantum Math Audit
+
+The Document Verification Hub includes an expandable Quantum Math Audit explaining the mathematical quantities displayed by the telemetry viewer.
+
+Total Variation Distance
+
+TVD measures the difference between the expected and observed probability distributions.
+
+TVD = 1/2 × Σ |P_expected(x) - P_observed(x)|
+
+A smaller TVD means the observed measurement distribution is closer to the expected distribution.
+
+Wilson Confidence Interval
+
+The Wilson interval provides a confidence interval around the observed verification success proportion.
+
+The implementation uses a 95% confidence level for the displayed Wilson interval.
+
+Pauli Z⊗Z Projection Correlation
+
+The current verification circuit performs measurements in the computational/Z basis.
+
+The two-qubit outcomes are mapped as:
+
+00 → +1
+01 → -1
+10 → -1
+11 → +1
+
+The aggregate correlation is calculated from the observed measurement counts.
+
+The implementation reports the correlation produced by the existing Z-basis verification circuit and does not claim that X- or Y-basis measurements were performed.
+
+Backend API Support
+
+The document verification backend exposes:
+
+POST /documents/verify
+
+The endpoint accepts:
+
+A document file
+A .qseal signature payload
+The requested number of quantum measurement shots
+
+The response contains:
+
+Verification validity
+Verification score
+Document hash
+Total blocks
+Valid blocks
+Invalid blocks
+Tampering status
+Signer identity
+Verification details
+Quantum telemetry
+Example Verification Results
+
+The completed workflow was tested using a generated document and matching .qseal.
+
+A normal verification produced:
+
+Status: AUTHENTIC
+Verification Score: 100.00%
+Valid Blocks: 128
+Invalid Blocks: 0
+TVD: 0.0000
+
+The adversary tampering simulation modified one byte and re-ran verification. One browser test produced:
+
+Status: TAMPER DETECTED
+Verification Score: 29.69%
+Valid Blocks: 38
+Invalid Blocks: 90
+TVD: 0.0625
+
+The exact numerical results can vary depending on the document, number of quantum shots, and simulation run.
+
+Role-Based Access
+
+The Document Verification Hub is available to the Verifier and Admin roles.
+
+The verifier workflow was manually tested using the Bob demo persona.
+
+The existing role-based navigation remains in place, with Document Verification added as an authorized view.
+
+Testing Completed
+
+The completed implementation was tested at multiple levels.
+
+Document Verification Tests
+18 passed
+Full Backend Test Suite
+119 passed
+Frontend Production Build
+
+The Next.js production build completed successfully:
+
+Compiled successfully
+Linting and checking validity of types
+Collecting page data
+Generating static pages
+Finalizing page optimization
+Browser Verification
+
+The complete workflow was manually tested through the frontend.
+
+Normal verification:
+
+Original document + .qseal
+        |
+        v
+Verify Document
+        |
+        v
+AUTHENTIC
+
+Adversary simulation:
+
+Original document + .qseal
+        |
+        v
+Simulate Adversary Tampering
+        |
+        v
+Modified document
+        |
+        v
+Re-verification
+        |
+        v
+TAMPER DETECTED
+
+The Quantum Telemetry Inspector and expandable Quantum Math Audit were also verified in the browser.
+
+Implementation Principle
+
+The completed work follows the existing project principles:
+
+No AI/ML — verification uses quantum simulation and statistical analysis.
+Explainable — the interface exposes the measurements and statistical quantities behind the result.
+Experiment-driven — verification uses repeated quantum simulation shots.
+Protocol-grounded — telemetry is derived from the implemented QDS verification circuit.
+Interactive — users can upload documents and simulate adversarial modification instead of viewing only pre-generated results.
+
+
+##Disclaimer
 
 This project is a software simulation and research prototype. Results from simulated quantum environments are not proof of security for real-world quantum communication systems. Security conclusions depend on the correctness of the implemented QDS protocol, the attack model used, the statistical analysis applied, and the assumptions underlying all of these.
-

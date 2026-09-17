@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -9,6 +9,7 @@ import {
   Zap,
   RefreshCw,
   Activity,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -23,10 +24,13 @@ export default function DocumentVerificationHub() {
   const [loading, setLoading] = useState(false);
   const [tampering, setTampering] = useState(false);
   const [error, setError] = useState("");
+  const [showMathAudit, setShowMathAudit] = useState(false);
 
   const handleVerify = async (fileToVerify = documentFile) => {
     if (!fileToVerify || !signatureFile) {
-      setError("Please select both the original document and its .qseal file.");
+      setError(
+        "Please select both the original document and its .qseal file."
+      );
       return;
     }
 
@@ -80,6 +84,26 @@ export default function DocumentVerificationHub() {
   };
 
   const isValid = result?.valid === true;
+
+  const telemetry = result?.telemetry || {};
+
+  const tvd =
+    telemetry.tvd !== undefined
+      ? Number(telemetry.tvd).toFixed(4)
+      : "—";
+
+  const wilsonCI = Array.isArray(telemetry.wilson_ci)
+    ? `${Number(telemetry.wilson_ci[0]).toFixed(4)} – ${Number(
+        telemetry.wilson_ci[1]
+      ).toFixed(4)}`
+    : "—";
+
+  const zzCorrelation =
+    telemetry.pauli_projection_correlations?.ZZ !== undefined
+      ? Number(
+          telemetry.pauli_projection_correlations.ZZ
+        ).toFixed(4)
+      : "—";
 
   return (
     <section className="space-y-6">
@@ -174,7 +198,12 @@ export default function DocumentVerificationHub() {
           <button
             type="button"
             onClick={() => handleVerify()}
-            disabled={loading || tampering || !documentFile || !signatureFile}
+            disabled={
+              loading ||
+              tampering ||
+              !documentFile ||
+              !signatureFile
+            }
             className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? (
@@ -209,6 +238,7 @@ export default function DocumentVerificationHub() {
           </button>
         </div>
 
+        {/* Error */}
         {error && (
           <div className="mt-5 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
             <div className="flex items-start gap-2">
@@ -228,6 +258,7 @@ export default function DocumentVerificationHub() {
               : "border border-red-400/20"
           }`}
         >
+          {/* Result header */}
           <div className="flex items-start gap-4">
             <div
               className={`rounded-xl p-3 ${
@@ -276,7 +307,9 @@ export default function DocumentVerificationHub() {
               label="Verification Score"
               value={
                 result.verification_score !== undefined
-                  ? `${Number(result.verification_score).toFixed(2)}%`
+                  ? `${(
+                      Number(result.verification_score) * 100
+                    ).toFixed(2)}%`
                   : "—"
               }
             />
@@ -297,7 +330,7 @@ export default function DocumentVerificationHub() {
             />
           </div>
 
-          {/* Telemetry */}
+          {/* Quantum Telemetry Inspector */}
           <div className="mt-6 rounded-xl border border-slate-700/60 bg-slate-950/30 p-5">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-cyan-300" />
@@ -307,10 +340,14 @@ export default function DocumentVerificationHub() {
               </h4>
             </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {/* Primary telemetry */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <TelemetryItem
                 label="Status"
-                value={result.status || (isValid ? "verified" : "failed")}
+                value={
+                  result.status ||
+                  (isValid ? "verified" : "failed")
+                }
               />
 
               <TelemetryItem
@@ -322,8 +359,61 @@ export default function DocumentVerificationHub() {
                 label="Tampered"
                 value={result.tampered ? "Yes" : "No"}
               />
+
+              <TelemetryItem
+                label="TVD"
+                value={tvd}
+              />
+
+              <TelemetryItem
+                label="Wilson 95% CI"
+                value={wilsonCI}
+              />
             </div>
 
+            {/* Quantum measurements */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <TelemetryItem
+                label="Pauli Z⊗Z Correlation"
+                value={zzCorrelation}
+              />
+
+              <TelemetryItem
+                label="Quantum Shots"
+                value={
+                  telemetry.total_shots !== undefined
+                    ? telemetry.total_shots
+                    : "—"
+                }
+              />
+            </div>
+
+            {/* Extra statistics */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <TelemetryItem
+                label="Successful Shots"
+                value={
+                  telemetry.successful_shots !== undefined
+                    ? telemetry.successful_shots
+                    : "—"
+                }
+              />
+
+              <TelemetryItem
+                label="Confidence Level"
+                value={
+                  telemetry.wilson_confidence !== undefined
+                    ? `${(
+                        Number(
+                          telemetry.wilson_confidence
+                        ) * 100
+                      ).toFixed(0)}%`
+                    : "—"
+                }
+              />
+            </div>
+
+            {/* Verification Details */}
             {result.details && (
               <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/50 p-4">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
@@ -333,8 +423,82 @@ export default function DocumentVerificationHub() {
                 <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs text-slate-300">
                   {typeof result.details === "string"
                     ? result.details
-                    : JSON.stringify(result.details, null, 2)}
+                    : JSON.stringify(
+                        result.details,
+                        null,
+                        2
+                      )}
                 </pre>
+              </div>
+            )}
+          </div>
+
+          {/* Quantum Math Audit */}
+          <div className="mt-6 rounded-xl border border-purple-400/20 bg-purple-400/5">
+            <button
+              type="button"
+              onClick={() =>
+                setShowMathAudit(!showMathAudit)
+              }
+              className="flex w-full items-center justify-between px-5 py-4 text-left"
+            >
+              <div>
+                <h4 className="font-medium text-white">
+                  Quantum Math Audit
+                </h4>
+
+                <p className="mt-1 text-xs text-slate-500">
+                  View the statistical and quantum calculations
+                  used during verification.
+                </p>
+              </div>
+
+              <ChevronDown
+                className={`h-5 w-5 text-purple-300 transition-transform ${
+                  showMathAudit
+                    ? "rotate-180"
+                    : ""
+                }`}
+              />
+            </button>
+
+            {showMathAudit && (
+              <div className="border-t border-purple-400/10 px-5 py-5">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <MathAuditCard
+                    title="Total Variation Distance"
+                    value={tvd}
+                    description="Measures the difference between expected and observed outcome distributions. Lower values indicate closer agreement."
+                  />
+
+                  <MathAuditCard
+                    title="Wilson Confidence Interval"
+                    value={wilsonCI}
+                    description="95% confidence interval for the observed verification success proportion."
+                  />
+
+                  <MathAuditCard
+                    title="Pauli Z⊗Z Projection"
+                    value={zzCorrelation}
+                    description="Two-qubit correlation calculated from the Z-basis measurement outcomes."
+                  />
+                </div>
+
+                <div className="mt-5 rounded-lg border border-slate-800 bg-slate-950/50 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+                    Interpretation
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    Q-Shield compares the measured quantum
+                    outcomes against the expected document
+                    signature. TVD captures distribution
+                    deviation, the Wilson interval represents
+                    statistical uncertainty, and the Z⊗Z
+                    projection records the observed two-qubit
+                    correlation.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -347,7 +511,8 @@ export default function DocumentVerificationHub() {
           <Activity className="mx-auto h-8 w-8 text-slate-500" />
 
           <p className="mt-3 text-sm text-slate-400">
-            Upload a document and its quantum seal to begin verification.
+            Upload a document and its quantum seal to begin
+            verification.
           </p>
         </div>
       )}
@@ -378,6 +543,24 @@ function TelemetryItem({ label, value }) {
 
       <p className="mt-1 truncate text-sm font-medium text-slate-200">
         {String(value)}
+      </p>
+    </div>
+  );
+}
+
+function MathAuditCard({ title, value, description }) {
+  return (
+    <div className="rounded-xl border border-slate-700/60 bg-slate-950/30 p-4">
+      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        {title}
+      </p>
+
+      <p className="mt-2 text-lg font-semibold text-white">
+        {value}
+      </p>
+
+      <p className="mt-2 text-xs leading-5 text-slate-400">
+        {description}
       </p>
     </div>
   );

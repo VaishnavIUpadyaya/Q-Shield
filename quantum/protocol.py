@@ -11,7 +11,10 @@ from quantum.document_hasher import (
     hash_to_2bit_chunks,
     compute_sha256,
 )
-
+from detection.statistics import (
+    distribution_difference,
+    wilson_interval,
+)
 
 SUPPORTED_MESSAGES = {"00", "01", "10", "11"}
 MEASUREMENT_BASIS = "Z"
@@ -132,6 +135,7 @@ class DocumentVerificationResult:
     signer_id: Optional[str] = None
     block_results: Optional[List[Dict[str, Any]]] = None
     details: Optional[Dict[str, Any]] = None
+    telemetry: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -145,8 +149,8 @@ class DocumentVerificationResult:
             "signer_id": self.signer_id,
             "block_results": self.block_results or [],
             "details": self.details or {},
+            "telemetry": self.telemetry or {},
         }
-
 
 def _validate_message(message: str):
     if message not in SUPPORTED_MESSAGES:
@@ -463,12 +467,16 @@ def verify_document_payload(
         shots: Number of quantum measurement shots per block (default: 100).
 
     Returns:
-        DocumentVerificationResult detailing valid status, score, and block measurements.
+        DocumentVerificationResult detailing valid status, score, block measurements,
+        and quantum telemetry including TVD, Wilson confidence interval, and
+        Z⊗Z Pauli projection correlation.
     """
     if shots <= 0:
         raise ValueError("shots must be greater than zero")
 
-    # Determine document hash and expected chunks
+    # ---------------------------------------------------------
+    # Determine document hash and expected 2-bit chunks
+    # ---------------------------------------------------------
     if isinstance(document_hash, (bytes, bytearray)):
         if len(document_hash) == 32:
             doc_hex = document_hash.hex()
@@ -476,18 +484,28 @@ def verify_document_payload(
         else:
             doc_hex = compute_sha256(document_hash)
             expected_chunks = hash_to_2bit_chunks(doc_hex)
+
     elif isinstance(document_hash, str):
         clean = document_hash.strip()
-        if len(clean) == 64 and all(c in "0123456789abcdefABCDEF" for c in clean):
+
+        if len(clean) == 64 and all(
+            c in "0123456789abcdefABCDEF"
+            for c in clean
+        ):
             doc_hex = clean.lower()
             expected_chunks = hash_to_2bit_chunks(doc_hex)
         else:
             doc_hex = compute_sha256(clean)
             expected_chunks = hash_to_2bit_chunks(doc_hex)
-    else:
-        raise TypeError(f"Unsupported type for document_hash: {type(document_hash)}")
 
+    else:
+        raise TypeError(
+            f"Unsupported type for document_hash: {type(document_hash)}"
+        )
+
+    # ---------------------------------------------------------
     # Extract block signatures and metadata
+    # ---------------------------------------------------------
     sig_doc_hash: Optional[str] = None
     signer_id: Optional[str] = None
     block_signatures: List[Any] = []
@@ -498,6 +516,7 @@ def verify_document_payload(
         signer_id = quantum_signature.signer_id
         block_signatures = list(quantum_signature.signatures)
         pub_infos = list(quantum_signature.public_verification_info)
+
     elif isinstance(quantum_signature, dict):
         sig_doc_hash = quantum_signature.get("document_hash")
         signer_id = quantum_signature.get("signer_id")
@@ -507,12 +526,19 @@ def verify_document_payload(
             or public_key_info
             or []
         )
+
     elif isinstance(quantum_signature, list):
         block_signatures = list(quantum_signature)
         pub_infos = list(public_key_info or [])
-    else:
-        raise TypeError(f"Unsupported type for quantum_signature: {type(quantum_signature)}")
 
+    else:
+        raise TypeError(
+            f"Unsupported type for quantum_signature: {type(quantum_signature)}"
+        )
+
+    # ---------------------------------------------------------
+    # Validate block count
+    # ---------------------------------------------------------
     if len(block_signatures) != len(expected_chunks):
         return DocumentVerificationResult(
             valid=False,
@@ -525,44 +551,113 @@ def verify_document_payload(
             signer_id=signer_id,
             block_results=[],
             details={
-                "error": f"Block count mismatch: expected {len(expected_chunks)}, got {len(block_signatures)}"
+                "error": (
+                    f"Block count mismatch: expected "
+                    f"{len(expected_chunks)}, got "
+                    f"{len(block_signatures)}"
+                )
+            },
+            telemetry={
+                "tvd": 1.0,
+                "wilson_ci": [0.0, 0.0],
+                "pauli_projection_correlations": {
+                    "ZZ": 0.0,
+                },
             },
         )
 
+    # ---------------------------------------------------------
     # Build Bob's verification circuits
+    # ---------------------------------------------------------
     circuits: List[QuantumCircuit] = []
+
     for i, sig in enumerate(block_signatures):
+
         if isinstance(sig, QDSSignature):
             info = sig.public_verification_info
-            sig_state = info.get("signature_state", sig.signing_state)
+            sig_state = info.get(
+                "signature_state",
+                sig.signing_state,
+            )
             pub_key = tuple(info["public_key"])
+
         elif isinstance(sig, dict):
-            info = sig.get("public_verification_info", {})
-            sig_state = info.get("signature_state") or sig.get("signing_state")
-            pub_key = tuple(info.get("public_key") or sig.get("public_key", ("I", "I")))
+            info = sig.get(
+                "public_verification_info",
+                {},
+            )
+            sig_state = (
+                info.get("signature_state")
+                or sig.get("signing_state")
+            )
+            pub_key = tuple(
+                info.get("public_key")
+                or sig.get(
+                    "public_key",
+                    ("I", "I"),
+                )
+            )
+
         elif i < len(pub_infos):
             info = pub_infos[i]
             sig_state = info["signature_state"]
             pub_key = tuple(info["public_key"])
-        else:
-            raise ValueError(f"Missing verification info for block {i}")
 
-        circuit = _build_verification_circuit(sig_state, pub_key)
+        else:
+            raise ValueError(
+                f"Missing verification info for block {i}"
+            )
+
+        circuit = _build_verification_circuit(
+            sig_state,
+            pub_key,
+        )
+
         circuits.append(circuit)
 
+    # ---------------------------------------------------------
+    # Run quantum verification
+    # ---------------------------------------------------------
     simulator = AerSimulator()
-    job = simulator.run(circuits, shots=shots)
+
+    job = simulator.run(
+        circuits,
+        shots=shots,
+    )
+
     result = job.result()
     raw_counts_list = result.get_counts()
 
     if isinstance(raw_counts_list, dict):
         raw_counts_list = [raw_counts_list]
 
+    # ---------------------------------------------------------
+    # Aggregate measurements across all blocks
+    # ---------------------------------------------------------
+    aggregate_expected_counts = {
+        "00": 0,
+        "01": 0,
+        "10": 0,
+        "11": 0,
+    }
+
+    aggregate_observed_counts = {
+        "00": 0,
+        "01": 0,
+        "10": 0,
+        "11": 0,
+    }
+
     block_results: List[Dict[str, Any]] = []
     valid_blocks = 0
 
+    # ---------------------------------------------------------
+    # Process every document block
+    # ---------------------------------------------------------
     for i, expected_chunk in enumerate(expected_chunks):
+
         raw_counts = raw_counts_list[i]
+
         measurement_counts = {
             "00": 0,
             "01": 0,
@@ -574,29 +669,210 @@ def verify_document_payload(
             normalized = bitstring[::-1]
             measurement_counts[normalized] += count
 
-        # A block is valid if the measured outcome matches expected chunk for 100% of shots
-        is_block_valid = (measurement_counts[expected_chunk] == shots)
+        # Expected distribution for this block.
+        expected_distribution = {
+            "00": 0.0,
+            "01": 0.0,
+            "10": 0.0,
+            "11": 0.0,
+        }
+
+        expected_distribution[expected_chunk] = 1.0
+
+        # Convert observed counts into probabilities.
+        observed_total = sum(
+            measurement_counts.values()
+        )
+
+        observed_distribution = {
+            outcome: (
+                count / observed_total
+                if observed_total > 0
+                else 0.0
+            )
+            for outcome, count
+            in measurement_counts.items()
+        }
+
+        # TVD for this block.
+        block_tvd = distribution_difference(
+            expected_distribution,
+            observed_distribution,
+        )
+
+        # A block is valid if every shot matches
+        # the expected 2-bit message.
+        is_block_valid = (
+            measurement_counts[expected_chunk] == shots
+        )
+
         if is_block_valid:
             valid_blocks += 1
+
+        # Aggregate counts for document-level telemetry.
+        for outcome in aggregate_observed_counts:
+            aggregate_observed_counts[outcome] += (
+                measurement_counts[outcome]
+            )
+
+        aggregate_expected_counts[expected_chunk] += shots
+
+        # Z⊗Z Pauli correlation:
+        #
+        # eigenvalue:
+        #   |0> -> +1
+        #   |1> -> -1
+        #
+        # Therefore:
+        #   00 -> +1
+        #   01 -> -1
+        #   10 -> -1
+        #   11 -> +1
+        #
+        # This is the actual correlation produced by
+        # the existing Z-basis verification measurement.
+        zz_numerator = (
+            measurement_counts["00"]
+            - measurement_counts["01"]
+            - measurement_counts["10"]
+            + measurement_counts["11"]
+        )
+
+        zz_correlation = (
+            zz_numerator / shots
+            if shots > 0
+            else 0.0
+        )
 
         block_results.append({
             "block_index": i,
             "expected_message": expected_chunk,
             "valid": is_block_valid,
             "measurement_counts": measurement_counts,
+            "observed_distribution": observed_distribution,
+            "tvd": round(block_tvd, 6),
+            "pauli_projection_correlations": {
+                "ZZ": round(zz_correlation, 6),
+            },
         })
 
+    # ---------------------------------------------------------
+    # Document-level verification statistics
+    # ---------------------------------------------------------
     total_blocks = len(expected_chunks)
-    invalid_blocks = total_blocks - valid_blocks
-    verification_score = (valid_blocks / total_blocks) if total_blocks > 0 else 0.0
 
-    hash_matched = (sig_doc_hash is None or sig_doc_hash.lower() == doc_hex.lower())
-    valid = (valid_blocks == total_blocks and hash_matched)
-    tampered = (not valid or verification_score < 1.0)
+    invalid_blocks = (
+        total_blocks - valid_blocks
+    )
 
+    verification_score = (
+        valid_blocks / total_blocks
+        if total_blocks > 0
+        else 0.0
+    )
+
+    # ---------------------------------------------------------
+    # Document-level TVD
+    # ---------------------------------------------------------
+    aggregate_expected_total = sum(
+        aggregate_expected_counts.values()
+    )
+
+    aggregate_observed_total = sum(
+        aggregate_observed_counts.values()
+    )
+
+    aggregate_expected_distribution = {
+        outcome: (
+            count / aggregate_expected_total
+            if aggregate_expected_total > 0
+            else 0.0
+        )
+        for outcome, count
+        in aggregate_expected_counts.items()
+    }
+
+    aggregate_observed_distribution = {
+        outcome: (
+            count / aggregate_observed_total
+            if aggregate_observed_total > 0
+            else 0.0
+        )
+        for outcome, count
+        in aggregate_observed_counts.items()
+    }
+
+    tvd = distribution_difference(
+        aggregate_expected_distribution,
+        aggregate_observed_distribution,
+    )
+
+    # ---------------------------------------------------------
+    # Wilson confidence interval
+    #
+    # Success = measured expected message.
+    # ---------------------------------------------------------
+    total_shots = (
+        total_blocks * shots
+    )
+
+    successful_shots = sum(
+    result["measurement_counts"][result["expected_message"]]
+    for result in block_results
+    )
+
+    wilson_ci = wilson_interval(
+        successful_shots,
+        total_shots,
+        confidence=0.95,
+    )
+
+    # ---------------------------------------------------------
+    # Aggregate Z⊗Z Pauli projection correlation
+    # ---------------------------------------------------------
+    zz_numerator = (
+        aggregate_observed_counts["00"]
+        - aggregate_observed_counts["01"]
+        - aggregate_observed_counts["10"]
+        + aggregate_observed_counts["11"]
+    )
+
+    zz_correlation = (
+        zz_numerator / total_shots
+        if total_shots > 0
+        else 0.0
+    )
+
+    # ---------------------------------------------------------
+    # Hash verification
+    # ---------------------------------------------------------
+    hash_matched = (
+        sig_doc_hash is None
+        or sig_doc_hash.lower() == doc_hex.lower()
+    )
+
+    # A document is authentic only when:
+    # 1. Every block verifies.
+    # 2. The signed document hash matches.
+    valid = (
+        valid_blocks == total_blocks
+        and hash_matched
+    )
+
+    tampered = (
+        not valid
+        or verification_score < 1.0
+    )
+
+    # ---------------------------------------------------------
+    # Return complete verification result
+    # ---------------------------------------------------------
     return DocumentVerificationResult(
         valid=valid,
-        verification_score=round(verification_score, 4),
+        verification_score=round(
+            verification_score,
+            4,
+        ),
         document_hash=doc_hex,
         total_blocks=total_blocks,
         valid_blocks=valid_blocks,
@@ -604,9 +880,33 @@ def verify_document_payload(
         tampered=tampered,
         signer_id=signer_id,
         block_results=block_results,
+
         details={
             "hash_matched": hash_matched,
             "signed_document_hash": sig_doc_hash,
             "verified_document_hash": doc_hex,
+            "expected_distribution": (
+                aggregate_expected_distribution
+            ),
+            "observed_distribution": (
+                aggregate_observed_distribution
+            ),
+        },
+
+        telemetry={
+            "tvd": round(tvd, 6),
+            "wilson_ci": [
+                round(wilson_ci[0], 6),
+                round(wilson_ci[1], 6),
+            ],
+            "wilson_confidence": 0.95,
+            "successful_shots": successful_shots,
+            "total_shots": total_shots,
+            "pauli_projection_correlations": {
+                "ZZ": round(
+                    zz_correlation,
+                    6,
+                ),
+            },
         },
     )

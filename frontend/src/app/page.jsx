@@ -8,6 +8,7 @@ import BatchExperimentRunner from "@/components/BatchExperimentRunner";
 import ThreatAnalytics from "@/components/ThreatAnalytics";
 import ExperimentHistory from "@/components/ExperimentHistory";
 import AuthModal from "@/components/auth/AuthModal";
+import DocumentVerificationHub from "../components/DocumentVerificationHub";
 import { RoleGate } from "@/components/layout/UserBadge";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -170,6 +171,12 @@ export default function Home() {
             onNavigateToSim={() => setActiveTab("simulation")}
             onRunPreset={handleRunPreset}
           />
+        )}
+
+        {activeTab === "documents" && (
+          <RoleGate viewId="documents">
+            <DocumentVerificationHub />
+          </RoleGate>
         )}
 
         {activeTab === "simulation" && (

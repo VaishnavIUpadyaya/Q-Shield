@@ -72,14 +72,13 @@ export const DEMO_PERSONAS = [
  * Adding a new view: add one entry here. Nothing else changes.
  * REMINDER: This is UX gating only — the backend enforces real RBAC.
  */
-export const VIEW_PERMISSIONS = {
-  overview:   ["signer", "verifier", "admin", "adversary"],
-  simulation: ["signer"],
-  batch:      ["signer", "admin"],
-  threats:    ["admin"],
-  history:    ["signer", "verifier", "admin", "adversary"],
-  // adversary attack lab — tab owned by Issue-5, not created here
-  // attacks: ["adversary"],
+export const VIEW_PERMISSIONS = { 
+  overview:    ["signer", "verifier", "admin", "adversary"], 
+  simulation:  ["signer"], 
+  batch:       ["signer", "admin"], 
+  threats:     ["admin"], 
+  history:     ["signer", "verifier", "admin", "adversary"],
+  documents:   ["verifier", "admin"],
 };
 
 /** Returns true if the given role can access the given view. */

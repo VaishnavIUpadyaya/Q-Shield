@@ -182,3 +182,55 @@ function fallbackSimulation(config) {
     created_at: new Date().toISOString(),
   };
 }
+
+/**
+ * Verify a document against a quantum seal.
+ */
+export async function verifyDocument(documentFile, signatureFile, shots = 100) {
+  const formData = new FormData();
+
+  formData.append("file", documentFile);
+
+  const signatureText = await signatureFile.text();
+  formData.append("signature_json", signatureText);
+
+  formData.append("shots", String(shots));
+
+  const res = await fetch(`${API_BASE_URL}/documents/verify`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({
+      detail: "Document verification failed",
+    }));
+
+    throw new Error(errorData.detail || `HTTP ${res.status}`);
+  }
+
+  return await res.json();
+}
+
+/**
+ * Create a tampered copy of a document by changing one byte.
+ */
+export async function simulateDocumentTampering(documentFile) {
+  const buffer = await documentFile.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+
+  if (bytes.length === 0) {
+    throw new Error("Cannot tamper with an empty document.");
+  }
+
+  const index = Math.floor(bytes.length / 2);
+  bytes[index] = bytes[index] ^ 0x01;
+
+  return new File(
+    [bytes],
+    documentFile.name,
+    {
+      type: documentFile.type || "application/octet-stream",
+    }
+  );
+}

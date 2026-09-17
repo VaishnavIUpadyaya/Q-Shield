@@ -316,6 +316,7 @@ async def verify_document(
             signer_id=verification_result.signer_id,
             status=status_str,
             details=verification_result.details or {},
+            telemetry=verification_result.telemetry or {},
         )
 
     except HTTPException:

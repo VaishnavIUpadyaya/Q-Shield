@@ -1,15 +1,19 @@
+
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Any
-
+from typing import Dict
+from experiments.firestore_storage import get_global_metrics
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
 
 from quantum.protocol import (
     SUPPORTED_MESSAGES,
@@ -17,27 +21,49 @@ from quantum.protocol import (
     sign,
     verify,
 )
+
 from backend.schemas import (
     ExperimentRequest,
     ExperimentResponse,
-    AttackInfo,
 )
-from backend.routers import attacks, experiments, results, auth, documents
-from backend.services.experiment_service import run_experiment
+
+from backend.routers import (
+    attacks,
+    experiments,
+    results,
+    auth,
+    documents,
+    audit,
+)
+
+from backend.services.experiment_service import (
+    run_experiment,
+)
+
 from backend.services.history_service import (
     save_experiment,
-    get_all_experiments,
+    
 )
+
+from experiments.firestore_storage import get_experiments_from_firestore
+
 from experiments.metrics import summarize_results
 
 
 app = FastAPI(
     title="Q-Shield API",
-    description="Quantum Digital Signature verification and threat detection API",
+    description=(
+        "Quantum Digital Signature verification "
+        "and threat detection API"
+    ),
     version="1.0.0",
 )
 
-# Enable CORS for Next.js / React frontend
+
+# ---------------------------------------------------------
+# CORS configuration
+# ---------------------------------------------------------
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -48,11 +74,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------
+# Router registration
+# ---------------------------------------------------------
+
 app.include_router(attacks.router)
 app.include_router(experiments.router)
 app.include_router(results.router)
 app.include_router(auth.router)
 app.include_router(documents.router)
+app.include_router(audit.router)
+
+
+# ---------------------------------------------------------
+# Request and response models
+# ---------------------------------------------------------
 
 
 class SignRequest(BaseModel):
@@ -76,6 +114,11 @@ class VerifyResponse(BaseModel):
     expected_distribution: Dict[str, float]
 
 
+# ---------------------------------------------------------
+# Basic endpoints
+# ---------------------------------------------------------
+
+
 @app.get("/")
 def root():
     return {
@@ -92,41 +135,34 @@ def health():
     }
 
 
-@app.post("/simulation/run", response_model=ExperimentResponse)
-def run_simulation_endpoint(request: ExperimentRequest):
-    """
-    Run an end-to-end quantum simulation with optional attack injection
-    and statistical threat detection.
+# ---------------------------------------------------------
+# Simulation endpoint
+# ---------------------------------------------------------
 
-    Experiment results are always saved to the in-memory history.
-    Firestore persistence is attempted separately and fails gracefully
-    when Firebase is not configured or unavailable.
+
+@app.post(
+    "/simulation/run",
+    response_model=ExperimentResponse,
+)
+def run_simulation_endpoint(
+    request: ExperimentRequest,
+):
     """
+    Run an end-to-end quantum simulation with optional
+    attack injection and statistical threat detection.
+
+    The experiment is saved through save_experiment(),
+    which handles in-memory storage and attempts
+    Firestore persistence.
+    """
+
     try:
         result = run_experiment(request)
 
-        # ---------------------------------------------------------
-        # 1. Save experiment to the active in-memory history
-        # ---------------------------------------------------------
+        # save_experiment handles:
+        # 1. In-memory history
+        # 2. Firestore persistence with fallback
         save_experiment(result)
-
-        # ---------------------------------------------------------
-        # 2. Persist experiment to Firebase Firestore
-        # ---------------------------------------------------------
-        # Lazy import keeps the API operational even when Firebase
-        # dependencies or credentials are not configured.
-        try:
-            from experiments.firestore_storage import (
-                save_experiment_to_firestore,
-            )
-
-            save_experiment_to_firestore(result)
-
-        except Exception as firestore_error:
-            # Firestore failure must not fail the simulation request.
-            print(
-                f"Firestore persistence failed: {firestore_error}"
-            )
 
         return result
 
@@ -134,73 +170,112 @@ def run_simulation_endpoint(request: ExperimentRequest):
         raise HTTPException(
             status_code=400,
             detail=str(error),
-        )
+        ) from error
+
+
+# ---------------------------------------------------------
+# Security metrics endpoint
+# ---------------------------------------------------------
 
 
 @app.get("/metrics")
 def get_security_metrics():
     """
-    Compute and return aggregated security metrics across all experiment trials.
+    Return the latest global security metrics.
+
+    Primary source:
+        Firestore collection: metrics
+        Firestore document: global
+
+    Fallback source:
+        dataset/audit/metrics.json
     """
-    history = get_all_experiments()
+    return get_global_metrics()
+#//=====
+# @app.get("/metrics")
+# def get_security_metrics():
+#     """
+#     Compute and return aggregated security metrics
+#     across all locally available experiment records.
+#     """
 
-    if not history:
-        return {
-            "total_experiments": 0,
-            "total_trials": 0,
-            "total_attacks": 0,
-            "total_legitimate": 0,
-            "detected_attacks": 0,
-            "false_accepts": 0,
-            "false_rejects": 0,
-            "detection_rate": 1.0,
-            "false_acceptance_rate": 0.0,
-            "false_rejection_rate": 0.0,
-            "accuracy": 1.0,
-            "forgery_probability": 0.0,
-        }
+#     history = get_experiments_from_firestore()
 
-    # Format trials for summarize_results
-    trial_records = []
+#     if not history:
+#         return {
+#             "total_experiments": 0,
+#             "total_trials": 0,
+#             "total_attacks": 0,
+#             "total_legitimate": 0,
+#             "detected_attacks": 0,
+#             "false_accepts": 0,
+#             "false_rejects": 0,
+#             "detection_rate": 1.0,
+#             "false_acceptance_rate": 0.0,
+#             "false_rejection_rate": 0.0,
+#             "accuracy": 1.0,
+#             "forgery_probability": 0.0,
+#         }
 
-    for exp in history:
-        attack_type = exp.get("attack_type", "none")
-        detection = exp.get("detection_result") or {}
+#     # Format experiments for summarize_results
+#     trial_records = []
 
-        is_attack = attack_type != "none"
-        attack_detected = detection.get(
-            "attack_detected",
-            is_attack,
-        )
+#     for experiment in history:
+#         attack_type = experiment.get(
+#             "attack_type",
+#             "none",
+#         )
 
-        trial_records.append({
-            "attack_type": attack_type,
-            "detection_result": {
-                "accepted": not attack_detected,
-                "decision": (
-                    "ACCEPT"
-                    if not attack_detected
-                    else "REJECT"
-                ),
-            },
-        })
+#         detection = experiment.get(
+#             "detection_result"
+#         ) or {}
 
-    summary = summarize_results(trial_records)
+#         is_attack = attack_type != "none"
 
-    summary["total_experiments"] = len(history)
-    summary["forgery_probability"] = summary.get(
-        "false_acceptance_rate",
-        0.0,
-    )
+#         attack_detected = detection.get(
+#             "attack_detected",
+#             is_attack,
+#         )
 
-    return summary
+#         trial_records.append(
+#             {
+#                 "attack_type": attack_type,
+#                 "detection_result": {
+#                     "accepted": not attack_detected,
+#                     "decision": (
+#                         "ACCEPT"
+#                         if not attack_detected
+#                         else "REJECT"
+#                     ),
+#                 },
+#             }
+#         )
+
+#     summary = summarize_results(trial_records)
+
+#     summary["total_experiments"] = len(history)
+
+#     summary["forgery_probability"] = summary.get(
+#         "false_acceptance_rate",
+#         0.0,
+#     )
+
+#     return summary
+
+
+# ---------------------------------------------------------
+# P1 QDS signing endpoint
+# ---------------------------------------------------------
 
 
 @app.post("/sign")
-def create_signature(request: SignRequest):
+def create_signature(
+    request: SignRequest,
+):
     """
-    P1 QDS signing endpoint.
+    Create a P1 quantum digital signature.
     """
+
     try:
         signature = sign(
             message=request.message,
@@ -210,28 +285,45 @@ def create_signature(request: SignRequest):
         return {
             "message": signature.message,
             "signing_state": signature.signing_state,
-            "sender_measurement": signature.sender_measurement,
-            "public_verification_info": signature.public_verification_info,
+            "sender_measurement": (
+                signature.sender_measurement
+            ),
+            "public_verification_info": (
+                signature.public_verification_info
+            ),
         }
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
             detail=str(error),
-        )
+        ) from error
 
 
-@app.post("/verify", response_model=VerifyResponse)
-def verify_signature(request: VerifyRequest):
+# ---------------------------------------------------------
+# P1 QDS verification endpoint
+# ---------------------------------------------------------
+
+
+@app.post(
+    "/verify",
+    response_model=VerifyResponse,
+)
+def verify_signature(
+    request: VerifyRequest,
+):
     """
     Verify a QDS signature using P1 protocol logic.
     """
+
     try:
         signature = QDSSignature(
             message=request.message,
             signing_state=request.signing_state,
             sender_measurement=request.sender_measurement,
-            public_verification_info=request.public_verification_info,
+            public_verification_info=(
+                request.public_verification_info
+            ),
         )
 
         result = verify(
@@ -242,24 +334,39 @@ def verify_signature(request: VerifyRequest):
         return {
             "valid": result.valid,
             "message": result.message,
-            "measurement_counts": result.measurement_counts,
-            "measurement_basis": result.measurement_basis,
-            "expected_distribution": result.expected_distribution,
+            "measurement_counts": (
+                result.measurement_counts
+            ),
+            "measurement_basis": (
+                result.measurement_basis
+            ),
+            "expected_distribution": (
+                result.expected_distribution
+            ),
         }
 
     except ValueError as error:
         raise HTTPException(
             status_code=400,
             detail=str(error),
-        )
+        ) from error
+
+
+# ---------------------------------------------------------
+# Combined sign-and-verify endpoint
+# ---------------------------------------------------------
 
 
 @app.post("/sign-and-verify")
-def sign_and_verify(request: SignRequest):
+def sign_and_verify(
+    request: SignRequest,
+):
     """
     Complete P1 real-time flow:
+
     Message -> QDS Sign -> QDS Verify -> API Response
     """
+
     try:
         signature = sign(
             message=request.message,
@@ -275,15 +382,25 @@ def sign_and_verify(request: SignRequest):
             "signature": {
                 "message": signature.message,
                 "signing_state": signature.signing_state,
-                "sender_measurement": signature.sender_measurement,
-                "public_verification_info": signature.public_verification_info,
+                "sender_measurement": (
+                    signature.sender_measurement
+                ),
+                "public_verification_info": (
+                    signature.public_verification_info
+                ),
             },
             "verification": {
                 "valid": verification.valid,
                 "message": verification.message,
-                "measurement_counts": verification.measurement_counts,
-                "measurement_basis": verification.measurement_basis,
-                "expected_distribution": verification.expected_distribution,
+                "measurement_counts": (
+                    verification.measurement_counts
+                ),
+                "measurement_basis": (
+                    verification.measurement_basis
+                ),
+                "expected_distribution": (
+                    verification.expected_distribution
+                ),
             },
         }
 
@@ -291,7 +408,12 @@ def sign_and_verify(request: SignRequest):
         raise HTTPException(
             status_code=400,
             detail=str(error),
-        )
+        ) from error
+
+
+# ---------------------------------------------------------
+# Local development entry point
+# ---------------------------------------------------------
 
 
 if __name__ == "__main__":

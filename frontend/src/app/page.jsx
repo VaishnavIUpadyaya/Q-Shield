@@ -11,11 +11,13 @@ import AuthModal from "@/components/auth/AuthModal";
 import DocumentVerificationHub from "../components/DocumentVerificationHub";
 import { RoleGate } from "@/components/layout/UserBadge";
 import { useAuth } from "@/hooks/useAuth";
+import DocumentSigningHub from "../components/DocumentSigningHub";
 import {
   checkBackendHealth,
   runSimulation,
   getMetrics,
   getExperimentHistory,
+  getAuditEvents,
 } from "@/services/api";
 
 export default function Home() {
@@ -45,24 +47,32 @@ export default function Home() {
   const [lastResult, setLastResult] = useState(null);
   const [history, setHistory] = useState([]);
 
+const [auditEvents, setAuditEvents] = useState([]);
+
   // Load initial data and poll health
-  const refreshData = async () => {
-    const health = await checkBackendHealth();
-    setBackendStatus(health);
+ const refreshData = async () => {
+  const health = await checkBackendHealth();
 
-    const m = await getMetrics();
-    setMetrics(m);
+  setBackendStatus(health);
 
-    const h = await getExperimentHistory();
+  const m = await getMetrics();
 
-    if (h && h.length > 0) {
-      setHistory(h);
+  setMetrics(m);
 
-      if (!lastResult) {
-        setLastResult(h[h.length - 1]);
-      }
+  const h = await getExperimentHistory();
+
+  if (h && h.length > 0) {
+    setHistory(h);
+
+    if (!lastResult) {
+      setLastResult(h[h.length - 1]);
     }
-  };
+  }
+
+  const events = await getAuditEvents();
+
+  setAuditEvents(events);
+};
 
   useEffect(() => {
     refreshData();
@@ -173,12 +183,18 @@ export default function Home() {
           />
         )}
 
-        {activeTab === "documents" && (
+        {/* {activeTab === "documents" && (
           <RoleGate viewId="documents">
             <DocumentVerificationHub />
           </RoleGate>
-        )}
-
+        )} */}
+{activeTab === "documents" && (
+  user?.role === "signer" ? (
+    <DocumentSigningHub />
+  ) : (
+    <DocumentVerificationHub />
+  )
+)}
         {activeTab === "simulation" && (
           <RoleGate viewId="simulation">
             <SimulationStudio
@@ -212,13 +228,14 @@ export default function Home() {
         {activeTab === "history" && (
           <RoleGate viewId="history">
             <ExperimentHistory
-              history={history}
-              onRefresh={refreshData}
-              onSelectRun={(run) => {
-                setLastResult(run);
-                setActiveTab("simulation");
-              }}
-            />
+  history={history}
+  auditEvents={auditEvents}
+  onRefresh={refreshData}
+  onSelectRun={(run) => {
+    setLastResult(run);
+    setActiveTab("simulation");
+  }}
+/>
           </RoleGate>
         )}
       </main>

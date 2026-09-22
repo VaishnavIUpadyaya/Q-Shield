@@ -11,12 +11,56 @@ import {
   Activity,
   ChevronDown,
 } from "lucide-react";
-
 import {
   verifyDocument,
   simulateDocumentTampering,
+  downloadVerificationCertificate,
 } from "@/services/api";
 
+async function calculateDocumentHash(file) {
+  const buffer = await file.arrayBuffer();
+
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    buffer
+  );
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function readSignatureMetadata(signatureFile) {
+  try {
+    const text = await signatureFile.text();
+    const signature = JSON.parse(text);
+
+    return {
+      documentId:
+        signature.document_id ||
+        signature.metadata?.document_id ||
+        signature.document?.document_id ||
+        null,
+
+      signerId:
+        signature.signer_id ||
+        signature.metadata?.signer_id ||
+        signature.signer?.id ||
+        signature.signer?.signer_id ||
+        null,
+    };
+  } catch (error) {
+    console.warn(
+      "Unable to read signature metadata:",
+      error
+    );
+
+    return {
+      documentId: null,
+      signerId: null,
+    };
+  }
+}
 export default function DocumentVerificationHub() {
   const [documentFile, setDocumentFile] = useState(null);
   const [signatureFile, setSignatureFile] = useState(null);
@@ -25,6 +69,8 @@ export default function DocumentVerificationHub() {
   const [tampering, setTampering] = useState(false);
   const [error, setError] = useState("");
   const [showMathAudit, setShowMathAudit] = useState(false);
+  const [certificateLoading, setCertificateLoading] =
+  useState(false);
 
   const handleVerify = async (fileToVerify = documentFile) => {
     if (!fileToVerify || !signatureFile) {
@@ -82,7 +128,237 @@ export default function DocumentVerificationHub() {
       setTampering(false);
     }
   };
+  //====
+  const handleDownloadCertificate = async () => {
+  if (!result) {
+    setError(
+      "Verify a document before generating a certificate."
+    );
+    return;
+  }
 
+  if (!documentFile || !signatureFile) {
+    setError(
+      "The original document and quantum seal are required."
+    );
+    return;
+  }
+
+  setCertificateLoading(true);
+  setError("");
+
+  try {
+    // Calculate the actual hash of the document
+    const calculatedHash =
+      await calculateDocumentHash(documentFile);
+
+    // Read metadata from the .qseal file
+    const signatureMetadata =
+      await readSignatureMetadata(signatureFile);
+
+    const details =
+      typeof result.details === "object"
+        ? result.details
+        : {};
+
+    const telemetry = result.telemetry || {};
+
+    const documentId =
+      result.document_id ||
+      details.document_id ||
+      signatureMetadata.documentId ||
+      calculatedHash.substring(0, 16);
+
+    const signerId =
+      result.signer_id ||
+      details.signer_id ||
+      signatureMetadata.signerId ||
+      "unknown-signer";
+
+    const documentHash =
+      result.document_hash ||
+      details.document_hash ||
+      calculatedHash;
+
+    const verificationData = {
+      document_id: documentId,
+
+      signer_id: signerId,
+
+      document_hash: documentHash,
+
+      verification_score:
+        result.verification_score ?? 0,
+
+      tvd:
+        telemetry.tvd ??
+        result.tvd ??
+        details.tvd ??
+        null,
+
+      valid:
+        result.valid === true,
+
+      /*
+       * Use the backend's actual tamper result.
+       * Do not infer tampering from attack type.
+       */
+      tampered:
+        typeof result.tampered === "boolean"
+          ? result.tampered
+          : typeof details.tampered === "boolean"
+          ? details.tampered
+          : false,
+
+      status:
+        result.status ||
+        details.status ||
+        (result.valid === true
+          ? "verified"
+          : "rejected"),
+
+      timestamp:
+        result.timestamp ||
+        result.created_at ||
+        details.timestamp ||
+        new Date().toISOString(),
+    };
+
+    console.log(
+      "Final certificate payload:",
+      verificationData
+    );
+
+    const blob =
+      await downloadVerificationCertificate(
+        verificationData
+      );
+
+    const downloadUrl =
+      window.URL.createObjectURL(blob);
+
+    const anchor =
+      document.createElement("a");
+
+    anchor.href = downloadUrl;
+
+    anchor.download =
+      `qshield_certificate_${documentId}.pdf`;
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error(
+      "Certificate download failed:",
+      error
+    );
+
+    setError(
+      error.message ||
+      "Certificate generation failed."
+    );
+  } finally {
+    setCertificateLoading(false);
+  }
+};
+// const handleDownloadCertificate = async () => {
+//   if (!result) {
+//     setError("Verify a document before generating a certificate.");
+//     return;
+//   }
+
+//   if (!result.document_hash) {
+//     setError(
+//       "Certificate unavailable: document hash is missing."
+//     );
+//     return;
+//   }
+
+//   setCertificateLoading(true);
+//   setError("");
+
+//   try {
+//     const telemetry = result.telemetry || {};
+
+//     const verificationData = {
+//       document_id:
+//         result.document_id ||
+//         result.details?.document_id ||
+//         documentFile?.name ||
+//         "unknown-document",
+
+//       signer_id:
+//         result.signer_id || "unknown-signer",
+
+//       document_hash:
+//         result.document_hash,
+
+//       verification_score:
+//         result.verification_score ?? 0,
+
+//       tvd:
+//         telemetry.tvd ?? null,
+
+//       valid:
+//         result.valid === true,
+
+//       tampered:
+//         result.tampered === true,
+
+//       status:
+//         result.status ||
+//         (result.tampered
+//           ? "tampered"
+//           : result.valid
+//           ? "verified"
+//           : "rejected"),
+
+//       timestamp:
+//         result.timestamp ||
+//         new Date().toISOString(),
+//     };
+
+//     const blob =
+//       await downloadVerificationCertificate(
+//         verificationData
+//       );
+
+//     const downloadUrl =
+//       window.URL.createObjectURL(blob);
+
+//     const anchor =
+//       document.createElement("a");
+
+//     anchor.href = downloadUrl;
+
+//     anchor.download =
+//       `qshield_certificate_${
+//         verificationData.document_id
+//       }.pdf`;
+
+//     document.body.appendChild(anchor);
+//     anchor.click();
+//     anchor.remove();
+
+//     window.URL.revokeObjectURL(downloadUrl);
+//   } catch (error) {
+//     console.error(
+//       "Certificate download failed:",
+//       error
+//     );
+
+//     setError(
+//       error.message ||
+//       "Certificate generation failed."
+//     );
+//   } finally {
+//     setCertificateLoading(false);
+//   }
+// };
+// =====
   const isValid = result?.valid === true;
 
   const telemetry = result?.telemetry || {};
@@ -104,6 +380,42 @@ export default function DocumentVerificationHub() {
           telemetry.pauli_projection_correlations.ZZ
         ).toFixed(4)
       : "—";
+
+  // Certificate display data
+const certificateDocumentId =
+  result?.document_id ||
+  result?.details?.document_id ||
+  result?.document_hash?.substring(0, 16) ||
+  "—";
+
+const certificateSignerId =
+  result?.signer_id ||
+  result?.details?.signer_id ||
+  "—";
+
+const certificateHash =
+  result?.document_hash ||
+  result?.details?.document_hash ||
+  "—";
+
+const certificateScore =
+  result?.verification_score !== undefined
+    ? result.verification_score
+    : "—";
+
+const certificateStatus =
+  result?.valid === true
+    ? "VALID"
+    : "INVALID / NOT VERIFIED";
+
+const certificateTampered =
+  result?.tampered === true ? "True" : "False";
+
+const certificateTimestamp =
+  result?.timestamp ||
+  result?.created_at ||
+  result?.details?.timestamp ||
+  new Date().toISOString();
 
   return (
     <section className="space-y-6">
@@ -452,7 +764,7 @@ export default function DocumentVerificationHub() {
                   used during verification.
                 </p>
               </div>
-
+certificateRow
               <ChevronDown
                 className={`h-5 w-5 text-purple-300 transition-transform ${
                   showMathAudit
@@ -502,6 +814,148 @@ export default function DocumentVerificationHub() {
               </div>
             )}
           </div>
+          {/* Certificate Download */}
+{/* Q-Shield Verification Certificate */}
+<div className="mt-8 overflow-hidden rounded-2xl border border-slate-600/70 bg-slate-950/70 shadow-2xl">
+
+  {/* Certificate Header */}
+  <div className="border-b border-slate-700/70 px-6 py-7 text-center">
+    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10">
+      <ShieldCheck className="h-6 w-6 text-cyan-300" />
+    </div>
+
+    <h3 className="text-xl font-bold tracking-wide text-white sm:text-2xl">
+      Q-SHIELD CRYPTOGRAPHIC VERIFICATION
+    </h3>
+
+    <h4 className="mt-1 text-lg font-bold tracking-wide text-cyan-300">
+      CERTIFICATE
+    </h4>
+
+    <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+      This certificate records the result of a Q-Shield document
+      verification operation.
+    </p>
+  </div>
+
+  {/* Certificate Table */}
+  <div className="p-5 sm:p-7">
+    <div className="overflow-hidden rounded-xl border border-slate-700/70">
+      <div className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,2fr)] bg-slate-800/80">
+        <div className="border-r border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200">
+          Field
+        </div>
+
+        <div className="px-4 py-3 text-sm font-semibold text-slate-200">
+          Value
+        </div>
+      </div>
+
+      {/* Document ID */}
+      <CertificateRow
+        label="Document ID"
+        value={certificateDocumentId}
+      />
+
+      {/* Signer */}
+      <CertificateRow
+        label="Signer ID"
+        value={certificateSignerId}
+      />
+
+      {/* Hash */}
+      <CertificateRow
+        label="SHA-256 Document Hash"
+        value={certificateHash}
+        mono
+      />
+
+      {/* Score */}
+      <CertificateRow
+        label="TVD / Verification Score"
+        value={certificateScore}
+      />
+
+      {/* Status */}
+      <CertificateRow
+        label="Verification Status"
+        value={certificateStatus}
+        status={certificateStatus === "VALID" ? "valid" : "invalid"}
+      />
+
+      {/* Tampered */}
+      <CertificateRow
+        label="Tampered"
+        value={certificateTampered}
+        status={certificateTampered === "False" ? "valid" : "invalid"}
+      />
+
+      {/* Timestamp */}
+      <CertificateRow
+        label="Timestamp"
+        value={certificateTimestamp}
+      />
+    </div>
+
+    {/* QR / verification area */}
+    <div className="mt-7 rounded-xl border border-slate-700/60 bg-slate-900/40 p-6 text-center">
+      <h4 className="text-base font-semibold text-white">
+        Certificate Verification
+      </h4>
+
+      <p className="mt-2 text-xs text-slate-500">
+        The downloadable certificate contains the official
+        Q-Shield verification QR code.
+      </p>
+
+      <div className="mx-auto mt-5 flex h-24 w-24 items-center justify-center rounded-lg border border-slate-700 bg-white">
+        <span className="text-center text-[10px] font-semibold leading-3 text-slate-500">
+          QR CODE
+          <br />
+          IN PDF
+        </span>
+      </div>
+    </div>
+
+    {/* Certificate footer / download */}
+    <div className="mt-6 flex flex-col gap-4 border-t border-slate-700/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          Certificate Status
+        </p>
+
+        <p
+          className={`mt-1 text-sm font-semibold ${
+            certificateStatus === "VALID"
+              ? "text-emerald-300"
+              : "text-red-300"
+          }`}
+        >
+          {certificateStatus === "VALID"
+            ? "Verification certificate generated"
+            : "Verification certificate generated — document failed verification"}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleDownloadCertificate}
+        disabled={certificateLoading}
+        className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {certificateLoading ? (
+          <RefreshCw className="h-4 w-4 animate-spin" />
+        ) : (
+          <FileCheck2 className="h-4 w-4" />
+        )}
+
+        {certificateLoading
+          ? "Generating Certificate..."
+          : "Download PDF Certificate"}
+      </button>
+    </div>
+  </div>
+</div>
         </div>
       )}
 
@@ -533,7 +987,34 @@ function MetricCard({ label, value }) {
     </div>
   );
 }
+function CertificateRow({
+  label,
+  value,
+  mono = false,
+  status = null,
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,2fr)] border-t border-slate-700/70">
+      <div className="border-r border-slate-700/70 bg-slate-900/50 px-4 py-3 text-sm text-slate-300">
+        {label}
+      </div>
 
+      <div
+          className={`min-w-0 overflow-hidden break-all px-4 py-3 text-sm font-medium leading-6 ${
+          mono ? "font-mono text-xs sm:text-sm" : ""
+        } ${
+          status === "valid"
+            ? "text-emerald-300"
+            : status === "invalid"
+            ? "text-red-300"
+            : "text-slate-200"
+        }`}
+      >
+        {String(value)}
+      </div>
+    </div>
+  );
+}
 function TelemetryItem({ label, value }) {
   return (
     <div>

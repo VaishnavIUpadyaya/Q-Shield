@@ -381,39 +381,41 @@ export default function DocumentVerificationHub() {
         ).toFixed(4)
       : "—";
 
-      // Certificate display data
-  const certificateDocumentId =
-    result?.document_id ||
-    result?.details?.document_id ||
-    result?.document_hash?.substring(0, 16) ||
-    "—";
+  // Certificate display data
+const certificateDocumentId =
+  result?.document_id ||
+  result?.details?.document_id ||
+  result?.document_hash?.substring(0, 16) ||
+  "—";
 
-  const certificateSignerId =
-    result?.signer_id ||
-    result?.details?.signer_id ||
-    "—";
+const certificateSignerId =
+  result?.signer_id ||
+  result?.details?.signer_id ||
+  "—";
 
-  const certificateHash =
-    result?.document_hash ||
-    result?.details?.document_hash ||
-    "—";
+const certificateHash =
+  result?.document_hash ||
+  result?.details?.document_hash ||
+  "—";
 
-  const certificateScore =
-    result?.verification_score !== undefined
-      ? result.verification_score
-      : "—";
+const certificateScore =
+  result?.verification_score !== undefined
+    ? result.verification_score
+    : "—";
 
-  const certificateStatus =
-    result?.valid === true ? "VALID" : "INVALID";
+const certificateStatus =
+  result?.valid === true
+    ? "VALID"
+    : "INVALID / NOT VERIFIED";
 
-  const certificateTampered =
-    result?.tampered === true ? "True" : "False";
+const certificateTampered =
+  result?.tampered === true ? "True" : "False";
 
-  const certificateTimestamp =
-    result?.timestamp ||
-    result?.created_at ||
-    result?.details?.timestamp ||
-    "—";
+const certificateTimestamp =
+  result?.timestamp ||
+  result?.created_at ||
+  result?.details?.timestamp ||
+  new Date().toISOString();
 
   return (
     <section className="space-y-6">
@@ -762,7 +764,7 @@ export default function DocumentVerificationHub() {
                   used during verification.
                 </p>
               </div>
-
+certificateRow
               <ChevronDown
                 className={`h-5 w-5 text-purple-300 transition-transform ${
                   showMathAudit
@@ -813,24 +815,146 @@ export default function DocumentVerificationHub() {
             )}
           </div>
           {/* Certificate Download */}
-{/* Certificate Download */}
-<div className="mt-6 flex justify-end">
-  <button
-    type="button"
-    onClick={handleDownloadCertificate}
-    disabled={certificateLoading}
-    className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-40"
-  >
-    {certificateLoading ? (
-      <RefreshCw className="h-4 w-4 animate-spin" />
-    ) : (
-      <FileCheck2 className="h-4 w-4" />
-    )}
+{/* Q-Shield Verification Certificate */}
+<div className="mt-8 overflow-hidden rounded-2xl border border-slate-600/70 bg-slate-950/70 shadow-2xl">
 
-    {certificateLoading
-      ? "Generating Certificate..."
-      : "Download Verification Certificate"}
-  </button>
+  {/* Certificate Header */}
+  <div className="border-b border-slate-700/70 px-6 py-7 text-center">
+    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-400/10">
+      <ShieldCheck className="h-6 w-6 text-cyan-300" />
+    </div>
+
+    <h3 className="text-xl font-bold tracking-wide text-white sm:text-2xl">
+      Q-SHIELD CRYPTOGRAPHIC VERIFICATION
+    </h3>
+
+    <h4 className="mt-1 text-lg font-bold tracking-wide text-cyan-300">
+      CERTIFICATE
+    </h4>
+
+    <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+      This certificate records the result of a Q-Shield document
+      verification operation.
+    </p>
+  </div>
+
+  {/* Certificate Table */}
+  <div className="p-5 sm:p-7">
+    <div className="overflow-hidden rounded-xl border border-slate-700/70">
+      <div className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,2fr)] bg-slate-800/80">
+        <div className="border-r border-slate-700 px-4 py-3 text-sm font-semibold text-slate-200">
+          Field
+        </div>
+
+        <div className="px-4 py-3 text-sm font-semibold text-slate-200">
+          Value
+        </div>
+      </div>
+
+      {/* Document ID */}
+      <CertificateRow
+        label="Document ID"
+        value={certificateDocumentId}
+      />
+
+      {/* Signer */}
+      <CertificateRow
+        label="Signer ID"
+        value={certificateSignerId}
+      />
+
+      {/* Hash */}
+      <CertificateRow
+        label="SHA-256 Document Hash"
+        value={certificateHash}
+        mono
+      />
+
+      {/* Score */}
+      <CertificateRow
+        label="TVD / Verification Score"
+        value={certificateScore}
+      />
+
+      {/* Status */}
+      <CertificateRow
+        label="Verification Status"
+        value={certificateStatus}
+        status={certificateStatus === "VALID" ? "valid" : "invalid"}
+      />
+
+      {/* Tampered */}
+      <CertificateRow
+        label="Tampered"
+        value={certificateTampered}
+        status={certificateTampered === "False" ? "valid" : "invalid"}
+      />
+
+      {/* Timestamp */}
+      <CertificateRow
+        label="Timestamp"
+        value={certificateTimestamp}
+      />
+    </div>
+
+    {/* QR / verification area */}
+    <div className="mt-7 rounded-xl border border-slate-700/60 bg-slate-900/40 p-6 text-center">
+      <h4 className="text-base font-semibold text-white">
+        Certificate Verification
+      </h4>
+
+      <p className="mt-2 text-xs text-slate-500">
+        The downloadable certificate contains the official
+        Q-Shield verification QR code.
+      </p>
+
+      <div className="mx-auto mt-5 flex h-24 w-24 items-center justify-center rounded-lg border border-slate-700 bg-white">
+        <span className="text-center text-[10px] font-semibold leading-3 text-slate-500">
+          QR CODE
+          <br />
+          IN PDF
+        </span>
+      </div>
+    </div>
+
+    {/* Certificate footer / download */}
+    <div className="mt-6 flex flex-col gap-4 border-t border-slate-700/60 pt-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          Certificate Status
+        </p>
+
+        <p
+          className={`mt-1 text-sm font-semibold ${
+            certificateStatus === "VALID"
+              ? "text-emerald-300"
+              : "text-red-300"
+          }`}
+        >
+          {certificateStatus === "VALID"
+            ? "Verification certificate generated"
+            : "Verification certificate generated — document failed verification"}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleDownloadCertificate}
+        disabled={certificateLoading}
+        className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {certificateLoading ? (
+          <RefreshCw className="h-4 w-4 animate-spin" />
+        ) : (
+          <FileCheck2 className="h-4 w-4" />
+        )}
+
+        {certificateLoading
+          ? "Generating Certificate..."
+          : "Download PDF Certificate"}
+      </button>
+    </div>
+  </div>
 </div>
         </div>
       )}
@@ -863,7 +987,34 @@ function MetricCard({ label, value }) {
     </div>
   );
 }
+function CertificateRow({
+  label,
+  value,
+  mono = false,
+  status = null,
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(140px,0.8fr)_minmax(0,2fr)] border-t border-slate-700/70">
+      <div className="border-r border-slate-700/70 bg-slate-900/50 px-4 py-3 text-sm text-slate-300">
+        {label}
+      </div>
 
+      <div
+          className={`min-w-0 overflow-hidden break-all px-4 py-3 text-sm font-medium leading-6 ${
+          mono ? "font-mono text-xs sm:text-sm" : ""
+        } ${
+          status === "valid"
+            ? "text-emerald-300"
+            : status === "invalid"
+            ? "text-red-300"
+            : "text-slate-200"
+        }`}
+      >
+        {String(value)}
+      </div>
+    </div>
+  );
+}
 function TelemetryItem({ label, value }) {
   return (
     <div>

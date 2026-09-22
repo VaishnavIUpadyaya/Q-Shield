@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import qrcode
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
@@ -87,6 +88,7 @@ def export_verification_certificate(
         )
     else:
         output_path = Path(output_path)
+
         output_path.parent.mkdir(
             parents=True,
             exist_ok=True,
@@ -94,7 +96,10 @@ def export_verification_certificate(
 
     output_path = output_path.resolve()
 
-    # QR code contains certificate verification data.
+    # ---------------------------------------------------------
+    # QR CODE
+    # ---------------------------------------------------------
+
     qr_payload = (
         f"Document Hash: {document_hash}\n"
         f"Verification Score: {verification_score}\n"
@@ -104,7 +109,12 @@ def export_verification_certificate(
     qr_code = qrcode.make(qr_payload)
 
     qr_path = output_path.with_suffix(".png")
+
     qr_code.save(qr_path)
+
+    # ---------------------------------------------------------
+    # PDF DOCUMENT
+    # ---------------------------------------------------------
 
     document = SimpleDocTemplate(
         str(output_path),
@@ -116,11 +126,33 @@ def export_verification_certificate(
     )
 
     styles = getSampleStyleSheet()
-    story = []
 
     title = styles["Title"]
     heading = styles["Heading2"]
     normal = styles["BodyText"]
+
+    # ---------------------------------------------------------
+    # HASH STYLE
+    #
+    # Keep exactly the same font, size, and leading as the
+    # normal certificate text.
+    #
+    # Only enable wrapping so the 64-character SHA-256 hash
+    # stays inside the table cell.
+    # ---------------------------------------------------------
+
+    hash_style = styles["BodyText"].clone(
+        "HashStyle"
+    )
+
+    hash_style.wordWrap = "CJK"
+    hash_style.splitLongWords = True
+
+    story = []
+
+    # ---------------------------------------------------------
+    # TITLE
+    # ---------------------------------------------------------
 
     story.append(
         Paragraph(
@@ -129,7 +161,13 @@ def export_verification_certificate(
         )
     )
 
-    story.append(Spacer(1, 20))
+    story.append(
+        Spacer(1, 20)
+    )
+
+    # ---------------------------------------------------------
+    # DESCRIPTION
+    # ---------------------------------------------------------
 
     story.append(
         Paragraph(
@@ -139,7 +177,13 @@ def export_verification_certificate(
         )
     )
 
-    story.append(Spacer(1, 20))
+    story.append(
+        Spacer(1, 20)
+    )
+
+    # ---------------------------------------------------------
+    # VERIFICATION STATUS
+    # ---------------------------------------------------------
 
     certificate_status = (
         "VALID"
@@ -147,29 +191,77 @@ def export_verification_certificate(
         else "INVALID / NOT VERIFIED"
     )
 
+    # ---------------------------------------------------------
+    # CERTIFICATE TABLE
+    # ---------------------------------------------------------
+
     certificate_data = [
-        ["Field", "Value"],
-        ["Document ID", str(
-            verification_data.get("document_id", "N/A")
-        )],
-        ["Signer ID", str(
-            verification_data.get("signer_id", "N/A")
-        )],
-        ["SHA-256 Document Hash", str(document_hash)],
-        ["TVD / Verification Score", str(
-            verification_score
-        )],
-        ["Verification Status", certificate_status],
-        ["Tampered", str(
-            verification_data.get("tampered", "N/A")
-        )],
-        ["Timestamp", str(timestamp)],
+        [
+            "Field",
+            "Value",
+        ],
+        [
+            "Document ID",
+            str(
+                verification_data.get(
+                    "document_id",
+                    "N/A",
+                )
+            ),
+        ],
+        [
+            "Signer ID",
+            str(
+                verification_data.get(
+                    "signer_id",
+                    "N/A",
+                )
+            ),
+        ],
+        [
+            "SHA-256 Document Hash",
+            Paragraph(
+                str(document_hash),
+                hash_style,
+            ),
+        ],
+        [
+            "TVD / Verification Score",
+            str(
+                verification_score
+            ),
+        ],
+        [
+            "Verification Status",
+            certificate_status,
+        ],
+        [
+            "Tampered",
+            str(
+                verification_data.get(
+                    "tampered",
+                    "N/A",
+                )
+            ),
+        ],
+        [
+            "Timestamp",
+            str(timestamp),
+        ],
     ]
 
     table = Table(
         certificate_data,
-        colWidths=[2.2 * inch, 4.2 * inch],
+        colWidths=[
+            2.2 * inch,
+            4.2 * inch,
+        ],
+        repeatRows=1,
     )
+
+    # ---------------------------------------------------------
+    # TABLE STYLE
+    # ---------------------------------------------------------
 
     table.setStyle(
         TableStyle(
@@ -178,7 +270,9 @@ def export_verification_certificate(
                     "BACKGROUND",
                     (0, 0),
                     (-1, 0),
-                    colors.HexColor("#1f2937"),
+                    colors.HexColor(
+                        "#1f2937"
+                    ),
                 ),
                 (
                     "TEXTCOLOR",
@@ -205,12 +299,37 @@ def export_verification_certificate(
                     (-1, -1),
                     8,
                 ),
+                (
+                    "FONTNAME",
+                    (0, 0),
+                    (-1, 0),
+                    "Helvetica-Bold",
+                ),
+                (
+                    "FONTNAME",
+                    (0, 1),
+                    (0, -1),
+                    "Helvetica",
+                ),
+                (
+                    "FONTNAME",
+                    (1, 1),
+                    (1, -1),
+                    "Helvetica",
+                ),
             ]
         )
     )
 
     story.append(table)
-    story.append(Spacer(1, 25))
+
+    story.append(
+        Spacer(1, 25)
+    )
+
+    # ---------------------------------------------------------
+    # QR CODE SECTION
+    # ---------------------------------------------------------
 
     story.append(
         Paragraph(
@@ -219,7 +338,10 @@ def export_verification_certificate(
         )
     )
 
-    story.append(Spacer(1, 10))
+    story.append(
+        Spacer(1, 10)
+    )
+
     story.append(
         Image(
             str(qr_path),
@@ -228,7 +350,13 @@ def export_verification_certificate(
         )
     )
 
-    story.append(Spacer(1, 20))
+    story.append(
+        Spacer(1, 20)
+    )
+
+    # ---------------------------------------------------------
+    # FOOTER
+    # ---------------------------------------------------------
 
     story.append(
         Paragraph(
@@ -240,9 +368,16 @@ def export_verification_certificate(
         )
     )
 
+    # ---------------------------------------------------------
+    # BUILD PDF
+    # ---------------------------------------------------------
+
     document.build(story)
 
-    # Remove the temporary QR image after PDF generation.
+    # ---------------------------------------------------------
+    # REMOVE TEMPORARY QR IMAGE
+    # ---------------------------------------------------------
+
     if qr_path.exists():
         qr_path.unlink()
 

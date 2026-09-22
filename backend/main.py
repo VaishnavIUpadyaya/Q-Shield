@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 from typing import Dict
-
+from experiments.firestore_storage import get_global_metrics
 # Ensure project root is in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -42,8 +42,10 @@ from backend.services.experiment_service import (
 
 from backend.services.history_service import (
     save_experiment,
-    get_all_experiments,
+    
 )
+
+from experiments.firestore_storage import get_experiments_from_firestore
 
 from experiments.metrics import summarize_results
 
@@ -179,72 +181,86 @@ def run_simulation_endpoint(
 @app.get("/metrics")
 def get_security_metrics():
     """
-    Compute and return aggregated security metrics
-    across all locally available experiment records.
+    Return the latest global security metrics.
+
+    Primary source:
+        Firestore collection: metrics
+        Firestore document: global
+
+    Fallback source:
+        dataset/audit/metrics.json
     """
+    return get_global_metrics()
+#//=====
+# @app.get("/metrics")
+# def get_security_metrics():
+#     """
+#     Compute and return aggregated security metrics
+#     across all locally available experiment records.
+#     """
 
-    history = get_all_experiments()
+#     history = get_experiments_from_firestore()
 
-    if not history:
-        return {
-            "total_experiments": 0,
-            "total_trials": 0,
-            "total_attacks": 0,
-            "total_legitimate": 0,
-            "detected_attacks": 0,
-            "false_accepts": 0,
-            "false_rejects": 0,
-            "detection_rate": 1.0,
-            "false_acceptance_rate": 0.0,
-            "false_rejection_rate": 0.0,
-            "accuracy": 1.0,
-            "forgery_probability": 0.0,
-        }
+#     if not history:
+#         return {
+#             "total_experiments": 0,
+#             "total_trials": 0,
+#             "total_attacks": 0,
+#             "total_legitimate": 0,
+#             "detected_attacks": 0,
+#             "false_accepts": 0,
+#             "false_rejects": 0,
+#             "detection_rate": 1.0,
+#             "false_acceptance_rate": 0.0,
+#             "false_rejection_rate": 0.0,
+#             "accuracy": 1.0,
+#             "forgery_probability": 0.0,
+#         }
 
-    # Format experiments for summarize_results
-    trial_records = []
+#     # Format experiments for summarize_results
+#     trial_records = []
 
-    for experiment in history:
-        attack_type = experiment.get(
-            "attack_type",
-            "none",
-        )
+#     for experiment in history:
+#         attack_type = experiment.get(
+#             "attack_type",
+#             "none",
+#         )
 
-        detection = experiment.get(
-            "detection_result"
-        ) or {}
+#         detection = experiment.get(
+#             "detection_result"
+#         ) or {}
 
-        is_attack = attack_type != "none"
+#         is_attack = attack_type != "none"
 
-        attack_detected = detection.get(
-            "attack_detected",
-            is_attack,
-        )
+#         attack_detected = detection.get(
+#             "attack_detected",
+#             is_attack,
+#         )
 
-        trial_records.append(
-            {
-                "attack_type": attack_type,
-                "detection_result": {
-                    "accepted": not attack_detected,
-                    "decision": (
-                        "ACCEPT"
-                        if not attack_detected
-                        else "REJECT"
-                    ),
-                },
-            }
-        )
+#         trial_records.append(
+#             {
+#                 "attack_type": attack_type,
+#                 "detection_result": {
+#                     "accepted": not attack_detected,
+#                     "decision": (
+#                         "ACCEPT"
+#                         if not attack_detected
+#                         else "REJECT"
+#                     ),
+#                 },
+#             }
+#         )
 
-    summary = summarize_results(trial_records)
+#     summary = summarize_results(trial_records)
 
-    summary["total_experiments"] = len(history)
+#     summary["total_experiments"] = len(history)
 
-    summary["forgery_probability"] = summary.get(
-        "false_acceptance_rate",
-        0.0,
-    )
+#     summary["forgery_probability"] = summary.get(
+#         "false_acceptance_rate",
+#         0.0,
+#     )
 
-    return summary
+#     return summary
 
 
 # ---------------------------------------------------------

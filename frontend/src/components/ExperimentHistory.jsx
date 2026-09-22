@@ -11,16 +11,144 @@ import {
   Eye,
   RefreshCw,
 } from "lucide-react";
-
+import { downloadVerificationCertificate } from "@/services/api";
 export default function ExperimentHistory({
   history,
+  auditEvents = [],
   onRefresh,
   onSelectRun,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterAttack, setFilterAttack] = useState("all");
   const [selectedItem, setSelectedItem] = useState(null);
+   const downloadCertificate = async (item) => {
+  try {
+    const detection = item.detection_result || {};
+    const metadata = item.metadata || {};
+    const verification = item.verification_result || {};
 
+    const documentHash =
+      item.document_hash ||
+      verification.document_hash ||
+      detection.document_hash ||
+      metadata.document_hash ||
+      item.hash ||
+      "";
+
+    const signerId =
+      item.signer_id ||
+      verification.signer_id ||
+      detection.signer_id ||
+      metadata.signer_id ||
+      "";
+
+    // Never generate a certificate with fake values.
+    if (!documentHash) {
+      alert(
+        "Certificate unavailable: the actual SHA-256 document hash was not stored in this record."
+      );
+      return;
+    }
+
+    if (!signerId) {
+      alert(
+        "Certificate unavailable: the actual signer ID was not stored in this record."
+      );
+      return;
+    }
+
+    const verificationData = {
+      document_id:
+        item.document_id ||
+        verification.document_id ||
+        metadata.document_id ||
+        item.experiment_id ||
+        "unknown-document",
+
+      signer_id: signerId,
+
+      document_hash: documentHash,
+
+      verification_score:
+        item.verification_score ??
+        verification.verification_score ??
+        detection.verification_score ??
+        metadata.verification_score ??
+        0,
+
+      tvd:
+        item.tvd ??
+        verification.tvd ??
+        detection.tvd ??
+        metadata.tvd ??
+        null,
+
+      valid:
+        item.valid ??
+        verification.valid ??
+        detection.valid ??
+        false,
+
+      tampered:
+        item.tampered ??
+        verification.tampered ??
+        detection.tampered ??
+        false,
+
+      status:
+        item.status ||
+        verification.status ||
+        detection.status ||
+        metadata.status ||
+        "unknown",
+
+      timestamp:
+        item.created_at ||
+        verification.timestamp ||
+        metadata.timestamp ||
+        new Date().toISOString(),
+    };
+
+    console.log(
+      "Certificate request payload:",
+      verificationData
+    );
+
+    const blob =
+      await downloadVerificationCertificate(
+        verificationData
+      );
+
+    const downloadUrl =
+      window.URL.createObjectURL(blob);
+
+    const anchor =
+      document.createElement("a");
+
+    anchor.href = downloadUrl;
+
+    anchor.download =
+      `qshield_certificate_${
+        verificationData.document_id
+      }.pdf`;
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error(
+      "Certificate download failed:",
+      error
+    );
+
+    alert(
+      `Certificate generation failed:\n\n${error.message}`
+    );
+  }
+};
+  //==
   const filteredHistory = history.filter((item) => {
     const matchesSearch =
       (item.experiment_id || "")
@@ -330,6 +458,124 @@ export default function ExperimentHistory({
           </div>
         )}
       </div>
+      
+{/* Document Audit Events Panel */}
+<div className="rounded-3xl glass-panel border border-white/[0.1] overflow-hidden">
+  <div className="p-6 border-b border-white/[0.08]">
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-xl font-display font-bold text-white">
+          Document Audit Events
+        </h2>
+
+        <p className="text-sm text-slate-400 mt-1">
+          Verification, rejection, and tamper-detection records.
+        </p>
+      </div>
+
+      <span className="px-3 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-quantum-cyan text-xs font-bold">
+        {auditEvents.length} EVENTS
+      </span>
+    </div>
+  </div>
+
+  {auditEvents.length === 0 ? (
+    <div className="p-8 text-center text-slate-400 text-sm font-mono">
+      No document audit events available.
+    </div>
+  ) : (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm font-mono border-collapse">
+        <thead>
+          <tr className="border-b border-white/[0.08] text-xs font-bold uppercase text-slate-400 bg-obsidian-950/80">
+            <th className="p-4">
+              Event Type
+            </th>
+
+            <th className="p-4">
+              Document ID
+            </th>
+
+            <th className="p-4">
+              Timestamp
+            </th>
+
+            <th className="p-4">
+              Status
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-white/[0.04] text-slate-300">
+          {auditEvents.map((event, index) => {
+            const eventType =
+              event.event_type || "unknown";
+
+            const isTamper =
+              eventType === "tamper_detected" ||
+              eventType === "verification_rejected";
+
+            return (
+              <tr
+                key={event.event_id || index}
+                className="hover:bg-white/[0.02] transition-colors"
+              >
+                <td className="p-4">
+                  <span
+                    className={
+                      isTamper
+                        ? "text-rose-300"
+                        : "text-emerald-300"
+                    }
+                  >
+                    {eventType.replaceAll("_", " ")}
+                  </span>
+                </td>
+
+                <td className="p-4 text-quantum-cyan text-xs">
+                  {(event.document_id || "Unknown").substring(
+                    0,
+                    16
+                  )}
+                  ...
+                </td>
+
+                <td className="p-4 text-slate-400 text-xs font-sans">
+                  {event.created_at
+                    ? new Date(
+                        event.created_at
+                      ).toLocaleString()
+                    : "Unknown"}
+                </td>
+
+                <td className="p-4">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold ${
+                      isTamper
+                        ? "bg-rose-950 text-rose-300 border border-rose-800"
+                        : "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                    }`}
+                  >
+                    {isTamper ? (
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    )}
+
+                    {isTamper
+                      ? "REVIEW"
+                      : "RECORDED"}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+
 
       {/* Detail Modal */}
       {selectedItem && (
@@ -413,7 +659,17 @@ export default function ExperimentHistory({
               </p>
             </div>
 
-            <div className="flex justify-end pt-2">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+              {/* <button
+                onClick={() =>
+                  downloadCertificate(selectedItem)
+                }
+                className="px-6 py-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-quantum-cyan border border-cyan-500/30 text-sm font-bold font-display flex items-center justify-center gap-2 transition-all"
+              >
+                <Download className="w-4 h-4" />
+                Download PDF Certificate
+              </button> */}
+
               <button
                 onClick={() =>
                   setSelectedItem(null)

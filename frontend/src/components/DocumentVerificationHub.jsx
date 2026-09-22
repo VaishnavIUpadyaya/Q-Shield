@@ -11,12 +11,56 @@ import {
   Activity,
   ChevronDown,
 } from "lucide-react";
-
 import {
   verifyDocument,
   simulateDocumentTampering,
+  downloadVerificationCertificate,
 } from "@/services/api";
 
+async function calculateDocumentHash(file) {
+  const buffer = await file.arrayBuffer();
+
+  const hashBuffer = await crypto.subtle.digest(
+    "SHA-256",
+    buffer
+  );
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function readSignatureMetadata(signatureFile) {
+  try {
+    const text = await signatureFile.text();
+    const signature = JSON.parse(text);
+
+    return {
+      documentId:
+        signature.document_id ||
+        signature.metadata?.document_id ||
+        signature.document?.document_id ||
+        null,
+
+      signerId:
+        signature.signer_id ||
+        signature.metadata?.signer_id ||
+        signature.signer?.id ||
+        signature.signer?.signer_id ||
+        null,
+    };
+  } catch (error) {
+    console.warn(
+      "Unable to read signature metadata:",
+      error
+    );
+
+    return {
+      documentId: null,
+      signerId: null,
+    };
+  }
+}
 export default function DocumentVerificationHub() {
   const [documentFile, setDocumentFile] = useState(null);
   const [signatureFile, setSignatureFile] = useState(null);
@@ -25,6 +69,8 @@ export default function DocumentVerificationHub() {
   const [tampering, setTampering] = useState(false);
   const [error, setError] = useState("");
   const [showMathAudit, setShowMathAudit] = useState(false);
+  const [certificateLoading, setCertificateLoading] =
+  useState(false);
 
   const handleVerify = async (fileToVerify = documentFile) => {
     if (!fileToVerify || !signatureFile) {
@@ -82,7 +128,237 @@ export default function DocumentVerificationHub() {
       setTampering(false);
     }
   };
+  //====
+  const handleDownloadCertificate = async () => {
+  if (!result) {
+    setError(
+      "Verify a document before generating a certificate."
+    );
+    return;
+  }
 
+  if (!documentFile || !signatureFile) {
+    setError(
+      "The original document and quantum seal are required."
+    );
+    return;
+  }
+
+  setCertificateLoading(true);
+  setError("");
+
+  try {
+    // Calculate the actual hash of the document
+    const calculatedHash =
+      await calculateDocumentHash(documentFile);
+
+    // Read metadata from the .qseal file
+    const signatureMetadata =
+      await readSignatureMetadata(signatureFile);
+
+    const details =
+      typeof result.details === "object"
+        ? result.details
+        : {};
+
+    const telemetry = result.telemetry || {};
+
+    const documentId =
+      result.document_id ||
+      details.document_id ||
+      signatureMetadata.documentId ||
+      calculatedHash.substring(0, 16);
+
+    const signerId =
+      result.signer_id ||
+      details.signer_id ||
+      signatureMetadata.signerId ||
+      "unknown-signer";
+
+    const documentHash =
+      result.document_hash ||
+      details.document_hash ||
+      calculatedHash;
+
+    const verificationData = {
+      document_id: documentId,
+
+      signer_id: signerId,
+
+      document_hash: documentHash,
+
+      verification_score:
+        result.verification_score ?? 0,
+
+      tvd:
+        telemetry.tvd ??
+        result.tvd ??
+        details.tvd ??
+        null,
+
+      valid:
+        result.valid === true,
+
+      /*
+       * Use the backend's actual tamper result.
+       * Do not infer tampering from attack type.
+       */
+      tampered:
+        typeof result.tampered === "boolean"
+          ? result.tampered
+          : typeof details.tampered === "boolean"
+          ? details.tampered
+          : false,
+
+      status:
+        result.status ||
+        details.status ||
+        (result.valid === true
+          ? "verified"
+          : "rejected"),
+
+      timestamp:
+        result.timestamp ||
+        result.created_at ||
+        details.timestamp ||
+        new Date().toISOString(),
+    };
+
+    console.log(
+      "Final certificate payload:",
+      verificationData
+    );
+
+    const blob =
+      await downloadVerificationCertificate(
+        verificationData
+      );
+
+    const downloadUrl =
+      window.URL.createObjectURL(blob);
+
+    const anchor =
+      document.createElement("a");
+
+    anchor.href = downloadUrl;
+
+    anchor.download =
+      `qshield_certificate_${documentId}.pdf`;
+
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (error) {
+    console.error(
+      "Certificate download failed:",
+      error
+    );
+
+    setError(
+      error.message ||
+      "Certificate generation failed."
+    );
+  } finally {
+    setCertificateLoading(false);
+  }
+};
+// const handleDownloadCertificate = async () => {
+//   if (!result) {
+//     setError("Verify a document before generating a certificate.");
+//     return;
+//   }
+
+//   if (!result.document_hash) {
+//     setError(
+//       "Certificate unavailable: document hash is missing."
+//     );
+//     return;
+//   }
+
+//   setCertificateLoading(true);
+//   setError("");
+
+//   try {
+//     const telemetry = result.telemetry || {};
+
+//     const verificationData = {
+//       document_id:
+//         result.document_id ||
+//         result.details?.document_id ||
+//         documentFile?.name ||
+//         "unknown-document",
+
+//       signer_id:
+//         result.signer_id || "unknown-signer",
+
+//       document_hash:
+//         result.document_hash,
+
+//       verification_score:
+//         result.verification_score ?? 0,
+
+//       tvd:
+//         telemetry.tvd ?? null,
+
+//       valid:
+//         result.valid === true,
+
+//       tampered:
+//         result.tampered === true,
+
+//       status:
+//         result.status ||
+//         (result.tampered
+//           ? "tampered"
+//           : result.valid
+//           ? "verified"
+//           : "rejected"),
+
+//       timestamp:
+//         result.timestamp ||
+//         new Date().toISOString(),
+//     };
+
+//     const blob =
+//       await downloadVerificationCertificate(
+//         verificationData
+//       );
+
+//     const downloadUrl =
+//       window.URL.createObjectURL(blob);
+
+//     const anchor =
+//       document.createElement("a");
+
+//     anchor.href = downloadUrl;
+
+//     anchor.download =
+//       `qshield_certificate_${
+//         verificationData.document_id
+//       }.pdf`;
+
+//     document.body.appendChild(anchor);
+//     anchor.click();
+//     anchor.remove();
+
+//     window.URL.revokeObjectURL(downloadUrl);
+//   } catch (error) {
+//     console.error(
+//       "Certificate download failed:",
+//       error
+//     );
+
+//     setError(
+//       error.message ||
+//       "Certificate generation failed."
+//     );
+//   } finally {
+//     setCertificateLoading(false);
+//   }
+// };
+// =====
   const isValid = result?.valid === true;
 
   const telemetry = result?.telemetry || {};
@@ -104,6 +380,40 @@ export default function DocumentVerificationHub() {
           telemetry.pauli_projection_correlations.ZZ
         ).toFixed(4)
       : "—";
+
+      // Certificate display data
+  const certificateDocumentId =
+    result?.document_id ||
+    result?.details?.document_id ||
+    result?.document_hash?.substring(0, 16) ||
+    "—";
+
+  const certificateSignerId =
+    result?.signer_id ||
+    result?.details?.signer_id ||
+    "—";
+
+  const certificateHash =
+    result?.document_hash ||
+    result?.details?.document_hash ||
+    "—";
+
+  const certificateScore =
+    result?.verification_score !== undefined
+      ? result.verification_score
+      : "—";
+
+  const certificateStatus =
+    result?.valid === true ? "VALID" : "INVALID";
+
+  const certificateTampered =
+    result?.tampered === true ? "True" : "False";
+
+  const certificateTimestamp =
+    result?.timestamp ||
+    result?.created_at ||
+    result?.details?.timestamp ||
+    "—";
 
   return (
     <section className="space-y-6">
@@ -502,6 +812,26 @@ export default function DocumentVerificationHub() {
               </div>
             )}
           </div>
+          {/* Certificate Download */}
+{/* Certificate Download */}
+<div className="mt-6 flex justify-end">
+  <button
+    type="button"
+    onClick={handleDownloadCertificate}
+    disabled={certificateLoading}
+    className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20 disabled:cursor-not-allowed disabled:opacity-40"
+  >
+    {certificateLoading ? (
+      <RefreshCw className="h-4 w-4 animate-spin" />
+    ) : (
+      <FileCheck2 className="h-4 w-4" />
+    )}
+
+    {certificateLoading
+      ? "Generating Certificate..."
+      : "Download Verification Certificate"}
+  </button>
+</div>
         </div>
       )}
 

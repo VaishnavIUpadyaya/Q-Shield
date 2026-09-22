@@ -1,5 +1,7 @@
 import os
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import firebase_admin
 from dotenv import load_dotenv
@@ -7,8 +9,8 @@ from firebase_admin import credentials, firestore
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-
 ENV_FILE = PROJECT_ROOT / ".env"
+
 load_dotenv(ENV_FILE)
 
 
@@ -16,9 +18,8 @@ def _get_credential_path() -> Path:
     """
     Resolve the Firebase service-account credential path.
 
-    The GOOGLE_APPLICATION_CREDENTIALS environment variable may
-    contain either an absolute path or a path relative to the
-    Q-Shield project root.
+    GOOGLE_APPLICATION_CREDENTIALS may contain either
+    an absolute path or a path relative to the project root.
     """
 
     credential_path_value = os.getenv(
@@ -36,9 +37,7 @@ def _get_credential_path() -> Path:
     ).expanduser()
 
     if not credential_path.is_absolute():
-        credential_path = (
-            PROJECT_ROOT / credential_path
-        )
+        credential_path = PROJECT_ROOT / credential_path
 
     credential_path = credential_path.resolve()
 
@@ -61,7 +60,7 @@ def _get_firestore_client():
     """
     Initialize and return the Firestore client.
 
-    Firebase is initialized only once for the process.
+    Firebase is initialized only once per process.
     """
 
     if not firebase_admin._apps:
@@ -76,16 +75,27 @@ def _get_firestore_client():
     return firestore.client()
 
 
+def _utc_timestamp() -> str:
+    """
+    Return the current UTC timestamp in ISO format.
+    """
+
+    return datetime.now(
+        timezone.utc
+    ).isoformat()
+
+
 def save_experiment_to_firestore(
     result: dict,
 ) -> str:
     """
     Save a completed experiment result to Firestore.
 
-    The experiment ID is used as the Firestore document ID.
+    Collection:
+        experiments
 
-    Returns:
-        str: Firestore document ID.
+    Document ID:
+        experiment_id
     """
 
     if not isinstance(result, dict):
@@ -114,3 +124,171 @@ def save_experiment_to_firestore(
     document_ref.set(result)
 
     return document_ref.id
+
+
+def get_experiments_from_firestore() -> list[dict[str, Any]]:
+    """
+    Retrieve all experiment records from Firestore.
+
+    Collection:
+        experiments
+
+    Returns:
+        A list of experiment dictionaries.
+    """
+
+    client = _get_firestore_client()
+
+    documents = (
+        client
+        .collection("experiments")
+        .stream()
+    )
+
+    experiments = []
+
+    for document in documents:
+        experiment = document.to_dict() or {}
+
+        # Ensure the Firestore document ID is available
+        # even if the stored data does not contain it.
+        experiment["experiment_id"] = document.id
+
+        experiments.append(experiment)
+
+    return experiments
+
+
+def save_signed_document(
+    document: dict,
+) -> str:
+    """
+    Save a signed document record to Firestore.
+
+    Collection:
+        signed_documents
+
+    Required field:
+        document_id
+    """
+
+    if not isinstance(document, dict):
+        raise ValueError(
+            "Document must be a dictionary."
+        )
+
+    document_id = document.get(
+        "document_id"
+    )
+
+    if not document_id:
+        raise ValueError(
+            "Document must contain "
+            "'document_id'."
+        )
+
+    client = _get_firestore_client()
+
+    document_data = {
+        **document,
+        "created_at": document.get(
+            "created_at",
+            _utc_timestamp(),
+        ),
+    }
+
+    document_ref = (
+        client
+        .collection("signed_documents")
+        .document(document_id)
+    )
+
+    document_ref.set(document_data)
+
+    return document_ref.id
+
+
+def save_audit_event(
+    event: dict,
+) -> str:
+    """
+    Save a verification or tamper event to Firestore.
+
+    Collection:
+        audit_events
+
+    Required field:
+        event_id
+    """
+
+    if not isinstance(event, dict):
+        raise ValueError(
+            "Event must be a dictionary."
+        )
+
+    event_id = event.get(
+        "event_id"
+    )
+
+    if not event_id:
+        raise ValueError(
+            "Event must contain "
+            "'event_id'."
+        )
+
+    client = _get_firestore_client()
+
+    event_data = {
+        **event,
+        "created_at": event.get(
+            "created_at",
+            _utc_timestamp(),
+        ),
+    }
+
+    document_ref = (
+        client
+        .collection("audit_events")
+        .document(event_id)
+    )
+
+    document_ref.set(event_data)
+
+    return document_ref.id
+
+
+def get_audit_events(
+    document_id: str | None = None,
+) -> list[dict[str, Any]]:
+    """
+    Retrieve audit events from Firestore.
+
+    If document_id is provided, only events associated
+    with that document are returned.
+    """
+
+    client = _get_firestore_client()
+
+    query = client.collection(
+        "audit_events"
+    )
+
+    if document_id:
+        query = query.where(
+            "document_id",
+            "==",
+            document_id,
+        )
+
+    documents = query.stream()
+
+    events = []
+
+    for document in documents:
+        event = document.to_dict() or {}
+
+        event["event_id"] = document.id
+
+        events.append(event)
+
+    return events

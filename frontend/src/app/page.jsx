@@ -11,6 +11,7 @@ import AuthModal from "@/components/auth/AuthModal";
 import DocumentVerificationHub from "../components/DocumentVerificationHub";
 import { RoleGate } from "@/components/layout/UserBadge";
 import { useAuth } from "@/hooks/useAuth";
+import DocumentSigningHub from "../components/DocumentSigningHub";
 import {
   checkBackendHealth,
   runSimulation,
@@ -188,7 +189,11 @@ const [auditEvents, setAuditEvents] = useState([]);
           </RoleGate>
         )} */}
 {activeTab === "documents" && (
-  <DocumentVerificationHub />
+  user?.role === "signer" ? (
+    <DocumentSigningHub />
+  ) : (
+    <DocumentVerificationHub />
+  )
 )}
         {activeTab === "simulation" && (
           <RoleGate viewId="simulation">

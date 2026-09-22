@@ -200,15 +200,22 @@ def export_verification_certificate(
             "Field",
             "Value",
         ],
+        # [
+        #     "Document ID",
+        #     str(
+        #         verification_data.get(
+        #             "document_id",
+        #             "N/A",
+        #         )
+        #     ),
+        # ],
         [
-            "Document ID",
-            str(
-                verification_data.get(
-                    "document_id",
-                    "N/A",
-                )
-            ),
-        ],
+                    "Document ID",
+                    Paragraph(
+                        str(document_id),
+                        hash_style,
+                    ),
+                ],
         [
             "Signer ID",
             str(

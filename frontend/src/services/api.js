@@ -1,7 +1,7 @@
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-
+verifyDocument
 /**
  * Health check endpoint
  */
@@ -368,6 +368,45 @@ function fallbackSimulation(config) {
 
     created_at: new Date().toISOString(),
   };
+}
+
+
+/**
+ * Sign a document using the Xu-Wang QDS protocol.
+ *
+ * Sends the uploaded document and signer identity to the
+ * backend signing endpoint.
+ */
+export async function signDocument(
+  documentFile,
+  signerId = "Alice"
+) {
+  const formData = new FormData();
+
+  formData.append("file", documentFile);
+  formData.append("signer_id", signerId);
+
+  const res = await fetch(
+    `${API_BASE_URL}/documents/sign`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!res.ok) {
+    const errorData = await res
+      .json()
+      .catch(() => ({
+        detail: "Document signing failed",
+      }));
+
+    throw new Error(
+      errorData.detail || `HTTP ${res.status}`
+    );
+  }
+
+  return await res.json();
 }
 
 /**

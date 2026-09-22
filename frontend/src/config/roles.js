@@ -78,7 +78,7 @@ export const VIEW_PERMISSIONS = {
   batch:       ["signer", "admin"], 
   threats:     ["admin"], 
   history:     ["signer", "verifier", "admin", "adversary"],
-  documents:   ["verifier", "admin"],
+  documents:   ["signer","verifier", "admin"],
 };
 
 /** Returns true if the given role can access the given view. */

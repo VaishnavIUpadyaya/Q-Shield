@@ -29,15 +29,47 @@ const TOKEN_KEY = "qshield_token";
 
 const AuthContext = createContext(null);
 
-/** Decode JWT exp without a library (base64url → JSON). */
-function getTokenExp(token) {
+/** Decode JWT payload without a library (base64url → JSON). */
+function parseJwt(token) {
   try {
     const payload = token.split(".")[1];
-    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return json.exp ?? null; // seconds since epoch
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
   } catch {
     return null;
   }
+}
+
+/** Decode JWT exp without a library (base64url → JSON). */
+function getTokenExp(token) {
+  const payload = parseJwt(token);
+  return payload?.exp ?? null; // seconds since epoch
+}
+
+/** Generate an instant client-side demo session & token (< 1ms). */
+function generateDemoToken(persona) {
+  const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + 7 * 24 * 3600; // 7 days validity
+  const user = {
+    user_id: `demo-${persona.username}-001`,
+    username: persona.username,
+    email: `${persona.username}@qshield.quantum`,
+    role: persona.role,
+  };
+  const payloadData = {
+    ...user,
+    iat: now,
+    exp: exp,
+  };
+  const payload = btoa(JSON.stringify(payloadData))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  const token = `${header}.${payload}.demo_signature_offline`;
+  return {
+    access_token: token,
+    token_type: "bearer",
+    user,
+  };
 }
 
 export function AuthProvider({ children }) {
@@ -65,16 +97,40 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  /** Validate a token against /auth/me and hydrate state. */
+  /** Validate a token against /auth/me and hydrate state with offline/demo resilience. */
   const hydrateFromToken = useCallback(async (tok) => {
+    const payload = parseJwt(tok);
+    const exp = payload?.exp ?? null;
+    if (exp && exp * 1000 <= Date.now()) {
+      localStorage.removeItem(TOKEN_KEY);
+      return;
+    }
+
+    // Optimistically hydrate state from token payload so UI renders immediately
+    if (payload?.username && payload?.role) {
+      setToken(tok);
+      setUser({
+        user_id: payload.user_id || `user-${payload.username}`,
+        username: payload.username,
+        email: payload.email || `${payload.username}@qshield.quantum`,
+        role: payload.role,
+      });
+      scheduleExpiry(tok);
+    }
+
+    // Attempt background validation against backend /auth/me
     try {
       const me = await apiGetMe(tok);
       setToken(tok);
       setUser(me);
-      scheduleExpiry(tok);
-    } catch {
-      // Token invalid or expired — clear it
-      localStorage.removeItem(TOKEN_KEY);
+    } catch (err) {
+      // If server explicitly rejects (401/403/409), clear session
+      if (err?.kind === "credentials") {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+        setUser(null);
+      }
+      // If network error (e.g. backend sleeping or cold-starting), keep the optimistic session
     }
   }, [scheduleExpiry]);
 
@@ -106,15 +162,48 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("storage", onStorage);
   }, [token, hydrateFromToken]);
 
-  const login = useCallback(async (username, password) => {
-    const data = await apiLogin(username, password);
-    // data: {access_token, token_type, user: {user_id, username, email, role}}
-    localStorage.setItem(TOKEN_KEY, data.access_token);
-    setToken(data.access_token);
-    setUser(data.user);
-    scheduleExpiry(data.access_token);
-    return data.user;
+  const loginDemo = useCallback((persona) => {
+    const demoData = generateDemoToken(persona);
+    localStorage.setItem(TOKEN_KEY, demoData.access_token);
+    setToken(demoData.access_token);
+    setUser(demoData.user);
+    scheduleExpiry(demoData.access_token);
+
+    // Fire non-blocking background attempt to sync with backend if awake
+    apiLogin(persona.username, persona.password || "qshield123")
+      .then((realData) => {
+        if (realData?.access_token) {
+          localStorage.setItem(TOKEN_KEY, realData.access_token);
+          setToken(realData.access_token);
+          setUser(realData.user);
+        }
+      })
+      .catch(() => {
+        // Backend cold/offline; demo session continues smoothly client-side
+      });
+
+    return demoData.user;
   }, [scheduleExpiry]);
+
+  const login = useCallback(async (username, password) => {
+    try {
+      const data = await apiLogin(username, password);
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+      setToken(data.access_token);
+      setUser(data.user);
+      scheduleExpiry(data.access_token);
+      return data.user;
+    } catch (err) {
+      // Fallback for demo users if network error occurs
+      const demoUsernames = ["alice", "bob", "eve", "admin"];
+      const lower = (username || "").toLowerCase();
+      if (demoUsernames.includes(lower) && err?.kind === "network") {
+        const rolesMap = { alice: "signer", bob: "verifier", eve: "adversary", admin: "admin" };
+        return loginDemo({ username: lower, role: rolesMap[lower], password });
+      }
+      throw err;
+    }
+  }, [scheduleExpiry, loginDemo]);
 
   const register = useCallback(async (username, email, password) => {
     // Returns UserResponse; does not issue a token — user must log in after.
@@ -122,7 +211,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginDemo, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

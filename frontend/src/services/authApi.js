@@ -36,21 +36,27 @@ export class AuthError extends Error {
   }
 }
 
-async function authFetch(path, options = {}) {
+async function authFetch(path, options = {}, timeoutMs = 6000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   let res;
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: options.signal || controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(options.headers || {}),
       },
     });
-  } catch {
+  } catch (err) {
+    clearTimeout(timeoutId);
     throw new AuthError(
       "Cannot reach the Q-Shield API. Is the backend running?",
       "network"
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   if (res.ok) return res.json();

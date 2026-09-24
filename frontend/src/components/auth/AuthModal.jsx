@@ -20,7 +20,7 @@ const PERSONA_SCOPE = {
 };
 
 export default function AuthModal() {
-  const { login, register } = useAuth();
+  const { login, loginDemo, register } = useAuth();
   const [tab, setTab] = useState("demo");
   const [loadingCard, setLoadingCard] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
@@ -38,7 +38,11 @@ export default function AuthModal() {
     clearMessages();
     setLoadingCard(persona.username);
     try {
-      await login(persona.username, persona.password);
+      if (typeof loginDemo === "function") {
+        loginDemo(persona);
+      } else {
+        await login(persona.username, persona.password);
+      }
     } catch (e) {
       setError({ msg: e.message, kind: e instanceof AuthError ? e.kind : "network" });
       setLoadingCard(null);
